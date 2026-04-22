@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: vector-store-loader
+
+server:
+  port: 0
+
+spring.ai:
+  vectorstore:
+    qdrant:
+      initialize-schema: true
+      collection-name: board-game-buddy
+  openai:
+    api-key: ${OPENAI_API_KEY}
+
+spring.cloud.function:
+  definition: fileSupplier|documentReader|splitter|titleDeterminer|vectorStoreConsumer
+
+file.supplier:
+  directory: "/var/dropoff"
+  filename-regex: .*\.(pdf|docx|txt)

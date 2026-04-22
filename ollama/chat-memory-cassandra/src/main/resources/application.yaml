@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: chat-memory-cassandra
+
+server:
+  port: 3001
+
+spring.ai:
+  ollama:
+    base-url: http://localhost:11434
+    chat.options.model: llama3.2
+    embedding.options.model: nomic-embed-text-v2-moe
+    init.pull-model-strategy: when_missing
+  vectorstore:
+    qdrant:
+      host: localhost
+      port: 6334
+      initialize-schema: true
+      collection-name: game-rules
+  chat.memory.repository:
+    cassandra:
+      keyspace: boardgamebuddy
+      table: chat_memory
+      messages-column: chat_messages
+      initialize-schema: true
+      time-to-live: PT24H
+
+
+spring.cassandra:
+  contact-points: localhost
+  port: 9042
+  local-datacenter: datacenter1

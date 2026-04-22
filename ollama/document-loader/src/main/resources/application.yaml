@@ -1,0 +1,36 @@
+spring:
+  application:
+    name: document-loader
+
+server:
+  port: 0
+
+spring.ai:
+  ollama:
+    base-url: http://localhost:11434
+    chat.options.model: llama3.2
+    embedding.options.model: nomic-embed-text-v2-moe
+    init.pull-model-strategy: when_missing
+  vectorstore:
+    qdrant:
+      host: localhost
+      port: 6334
+      initialize-schema: true
+      collection-name: game-rules
+
+spring.data:
+  redis:
+    host: localhost
+    port: 6379
+
+spring.cloud:
+  function:
+    definition: fileSupplier|documentReader|documentSplitter|titleDeterminer|documentConsumer
+
+
+file.supplier:
+  directory: D:/documents/dropoff
+  filename-regex: .*\.(pdf|docx|txt)
+  delay-when-empty: 5s
+  prevent-duplicates: true
+

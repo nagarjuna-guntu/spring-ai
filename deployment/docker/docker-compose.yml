@@ -1,0 +1,36 @@
+services:
+  board-qdrant:
+    image: 'qdrant/qdrant:latest'
+    container_name: 'board-qdrant'
+    ports:
+      - '6334:6334'
+      - '6333:6333'
+  board-redis:
+    image: 'redis:8.4.0'
+    container_name: 'board-redis'
+    ports:
+      - '6379:6379'
+
+  board-cassandra:
+    image: cassandra:latest # Using a recent version compatible with Spring AI
+    container_name: board-cassandra
+    environment:
+      - CASSANDRA_CLUSTER_NAME=board_cluster
+      - CASSANDRA_DC=datacenter1
+    ports:
+      - "9042:9042"
+
+  board-postgres:
+    image: 'postgres:15.1'
+    container_name: 'board-postgres'
+    environment:
+      - 'POSTGRES_USER=user'
+      - 'POSTGRES_PASSWORD=secret'
+      - 'POSTGRES_DB=boarddb_games'
+    ports:
+      - '5432:5432'
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d boarddb_chat"]
+      interval: 5s
+      timeout: 5s
+      retries: 5

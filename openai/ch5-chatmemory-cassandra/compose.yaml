@@ -1,0 +1,16 @@
+services:
+  qdrant:
+    image: 'qdrant/qdrant:latest'
+    container_name: 'board-qdrant'
+    ports:
+      - '6334:6334'
+      - '6333:6333'
+
+  cassandra:
+    image: 'cassandra:latest'
+    container_name: 'board-cassandra'
+    environment:
+      - 'CASSANDRA_DC=dc1'
+      - 'CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch'
+    ports:
+      - '9042:9042'

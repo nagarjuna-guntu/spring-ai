@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: board-game-buddy
+
+spring.ai.openai:
+  #chat.options:
+    #model:
+  api-key: ${SPRING_AI_OPENAI_API_KEY}

@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: mcp-server
+
+  sql:
+    init:
+      mode: always
+
+spring.main.banner-mode: off
+logging.level.root: error
+
+spring.ai.mcp.server:
+  name: stdio-mcp-server
+  version: 1.0.0
+  type: sync

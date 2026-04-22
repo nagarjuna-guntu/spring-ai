@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: board-game-buddy
+
+spring.ai:
+  openai:
+    chat.options.model: gpt-4o-mini
+    api-key: ${SPRING_AI_OPENAI_API_KEY}
+  vectorstore:
+    qdrant:
+      initialize-schema: true
+      collection-name: board-game-buddy
+  chat.memory.repository:
+    cassandra:
+      initialize-schema: false
+      messages-column: chat_messages  #default column is 'messages'
+      keyspace: board-game-buddy  #name-space, default is 'springframework'
+      table: chat_memory  #default table name is 'ai_chat_memory'
+
+management.endpoints:
+  web:
+    exposure:
+      include: health

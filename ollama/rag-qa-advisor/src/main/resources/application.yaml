@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: rag-qa-advisor
+
+server:
+  port: 3001
+
+spring.ai:
+  ollama:
+    base-url: http://localhost:11434
+    chat.options.model: llama3.2
+    embedding.options.model: nomic-embed-text-v2-moe
+    init.pull-model-strategy: when_missing
+  vectorstore:
+    qdrant:
+      host: localhost
+      port: 6334
+      initialize-schema: true
+      collection-name: game-rules

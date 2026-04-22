@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: simple-tools
+
+spring.ai:
+  openai.api-key: ${OPENAI_API_KEY}

@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: tools-functions-as-tools
+
+server:
+  port: 3001
+
+spring.ai:
+  ollama:
+    base-url: http://localhost:11434
+    chat.options.model: llama3.2
+    embedding.options.model: nomic-embed-text-v2-moe
+    init.pull-model-strategy: when_missing
+  vectorstore:
+    qdrant:
+      host: localhost
+      port: 6334
+      initialize-schema: true
+      collection-name: game-rules
+
+spring.datasource:
+  url: jdbc:postgresql://localhost:5432/boarddb_games
+  username: user
+  password: secret
+
+spring.sql:
+  init:
+    mode: always
+
+logging.level:
+  com.example.tools: DEBUG
+  org.springframework.ai: DEBUG

@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: board-game-buddy
+
+spring.ai:
+  openai:
+    chat.options.model: gpt-4o-mini
+    api-key: ${SPRING_AI_OPENAI_API_KEY}
+  vectorstore:
+    qdrant:
+      initialize-schema: true
+      collection-name: board-game-buddy
+
+
+management.endpoints:
+  web:
+    exposure:
+      include: health
