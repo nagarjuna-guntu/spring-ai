@@ -26,7 +26,8 @@ services:
     environment:
       - 'POSTGRES_USER=user'
       - 'POSTGRES_PASSWORD=secret'
-      - 'POSTGRES_DB=boarddb_games'
+    volumes:
+      - ./postgresql/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - '5432:5432'
     healthcheck:

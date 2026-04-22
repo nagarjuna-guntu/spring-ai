@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: board-game-mcp-service
+server:
+  port: 4040
+
+spring.ai.mcp:
+  server:
+    name: board-game-mcp-server
+    version: 1.0.0
+    protocol: STREAMABLE
+    type: sync
+
+spring.datasource:
+  username: user
+  password: secret
+  url: jdbc:postgresql://localhost:5432/boarddb_players
+
+spring.sql:
+  init:
+    mode: always
+
+logging.level:
+  org.springframework.ai: DEBUG
+  com.example.mcpservice: DEBUG

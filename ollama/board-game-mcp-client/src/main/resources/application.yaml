@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: board-game-mcp-client
+
+server:
+  port: 3002
+
+spring.ai:
+  ollama:
+    base-url: http://localhost:11434
+    chat.options.model: llama3.2
+    embedding.options.model: nomic-embed-text-v2-moe
+    init.pull-model-strategy: when_missing
+  mcp:
+    client:
+      streamable-http:
+        connections:
+          board-game-mcp-server:
+            url: http://localhost:4040
+      type: sync
+
+logging.level:
+  org.springframework.ai: DEBUG
+  com.example.mcpservice: DEBUG
