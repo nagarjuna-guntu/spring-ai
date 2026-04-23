@@ -21,9 +21,9 @@ public class BoardGameService {
 
     public BoardGameService(
             @Value("classpath:/promptTemplates/systemPromptTemplate.st")Resource promptTemplate,
-            ChatClient.Builder chatClientBuilder, GameTools gameTools) {
+            ChatClient chatClient, GameTools gameTools) {
         this.promptTemplate = promptTemplate;
-        this.chatClient = chatClientBuilder.build();
+        this.chatClient = chatClient;
         this.gameTools = gameTools;
     }
 

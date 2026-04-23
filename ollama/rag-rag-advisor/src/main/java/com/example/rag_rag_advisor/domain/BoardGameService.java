@@ -17,8 +17,8 @@ public class BoardGameService {
 
     private final ChatClient chatClient;
 
-    public BoardGameService(ChatClient.Builder chatClientBuilder) {
-        this.chatClient = chatClientBuilder.build();
+    public BoardGameService(ChatClient chatClient) {
+        this.chatClient = chatClient;
     }
 
     public Answer askQuestion(Question question) {

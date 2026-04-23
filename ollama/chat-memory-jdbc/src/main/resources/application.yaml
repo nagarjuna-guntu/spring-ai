@@ -19,15 +19,13 @@ spring.ai:
       collection-name: game-rules
   chat.memory.repository:
     jdbc:
-      initialize-schema: never
-      platform: postgresql
-
+      initialize-schema: always
 
 spring.datasource:
   username: user
   password: secret
-  url: jdbc:postgresql://localhost:5432/boarddb_chat?options=-c%20TimeZone=Asia/Kolkata
-  driver-class-name: org.postgresql.Driver
+  url: jdbc:postgresql://localhost:5432/boarddb_chats
+
 
 
 

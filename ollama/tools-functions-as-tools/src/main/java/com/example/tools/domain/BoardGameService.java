@@ -20,9 +20,9 @@ public class BoardGameService {
 
     public BoardGameService(
             @Value("classpath:/promptTemplates/systemPromptTemplate.st")Resource promptTemplate,
-            ChatClient.Builder chatClientBuilder) {
+            ChatClient chatClient) {
         this.promptTemplate = promptTemplate;
-        this.chatClient = chatClientBuilder.build();
+        this.chatClient = chatClient;
     }
 
     public Answer askQuestion(Question question, String chatId) {
