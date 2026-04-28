@@ -10,7 +10,7 @@ import java.nio.file.StandardCopyOption;
 
 @Slf4j
 @Component
-public class FileMoverHelper {
+public class FileMover {
 
     public void moveProcessedFile(String filePath) {
         moveFile(filePath, "D:/documents/processed");

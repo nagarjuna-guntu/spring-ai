@@ -6,7 +6,6 @@ import org.springframework.ai.document.Document;
 import org.springframework.ai.reader.tika.TikaDocumentReader;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,15 +27,18 @@ import java.util.stream.Collectors;
 @Slf4j
 public class ETLPipelineConfig {
 
-    @Value("classpath:/promptTemplates/game-name-prompt.st")
-    Resource gameNamePromptTemplate;
 
-    @Autowired
-    FileMoverHelper fileMoverHelper;
+    private final Resource gameNamePromptTemplate;
+    private final FileMover fileMover;
+
+    public ETLPipelineConfig(@Value("classpath:/promptTemplates/game-name-prompt.st") Resource gameNamePromptTemplate,
+                             FileMover fileMover) {
+        this.gameNamePromptTemplate = gameNamePromptTemplate;
+        this.fileMover = fileMover;
+    }
 
     @Bean
     Function<Flux<Message<byte[]>>, Flux<Document>> documentReader() {
-        log.info("Reading Document ...");
         return messageFlux -> messageFlux
                 .publishOn(Schedulers.boundedElastic())
                 .flatMap(message -> {
@@ -64,7 +66,7 @@ public class ETLPipelineConfig {
                             .timeout(Duration.ofSeconds(20))
                             .onErrorResume(ex -> {
                                 log.info("[{}] Read failed -", file_originalFile_path, ex);
-                                fileMoverHelper.moveToDLQ(file_originalFile);
+                                fileMover.moveToDLQ(file_originalFile);
                                 return Mono.empty();
                             });
                 });
@@ -72,15 +74,16 @@ public class ETLPipelineConfig {
 
     @Bean
     Function<Flux<Document>, Flux<List<Document>>> documentSplitter() {
-        log.info("Splitting Document ...");
         TokenTextSplitter splitter = TokenTextSplitter.builder().build();
         return documentFlux -> documentFlux
-                .map(document -> splitter.apply(List.of(document)));
+                .map(document -> {
+                    log.info("[{}] document splitting - ", document.getMetadata().getOrDefault("file_originalFile_path", ""));
+                    return splitter.apply(List.of(document));
+                });
     }
 
     @Bean
     Function<Flux<List<Document>>, Flux<List<Document>>> titleDeterminer(ChatClient.Builder chatClientBuilder) {
-        log.info("Titling Document ...");
         var chatClient = chatClientBuilder.build();
         return listFlux -> listFlux
                 .onBackpressureBuffer(100)
@@ -91,21 +94,23 @@ public class ETLPipelineConfig {
                                             .limit(3)
                                             .map(Document::getText)
                                             .collect(Collectors.joining(System.lineSeparator()));
-                                    log.info("processing titling---");
+                                    log.info("calling llm to determine title...");
                                     var gameTitle = chatClient.prompt()
                                             .user(promptUserSpec -> promptUserSpec
                                                     .text(gameNamePromptTemplate)
                                                     .param("document", combinedText))
                                             .call()
                                             .entity(GameTitle.class);
-                                    log.info("llm called ---{}", gameTitle);
+                                    log.info("llm called ... game title - {}", gameTitle);
+
                                     if (gameTitle == null || gameTitle.title() == null || gameTitle.title().equals("UNKNOWN")) {
                                         return Collections.<Document>emptyList();
                                     }
-                                    log.info("Determined game title to be {}", gameTitle.title());
+
                                     documents.forEach(document ->
                                             document.getMetadata().put("gameTitle", gameTitle.normalizedTitle())
                                     );
+
                                     log.info("Title determined: {}", gameTitle.title());
                                     return documents;
                                 }).subscribeOn(Schedulers.boundedElastic())
@@ -118,17 +123,17 @@ public class ETLPipelineConfig {
 
     @Bean
     Function<Flux<List<Document>>, Mono<Void>> documentConsumer(VectorStore vectorStore) {
-        log.info("Consuming Document ...");
         return listFlux -> listFlux
                 .filter(documents -> !documents.isEmpty())
                 .flatMap(documents ->
                         Mono.fromRunnable(() -> {
                                     String filePath = (String) documents.getFirst().getMetadata().get("file_originalFile_path");
+                                    log.info("[{}] document consuming... ", filePath);
                                     var count = documents.size();
                                     log.info("[{}] Writing {} documents to vector store.", filePath, count);
                                     vectorStore.accept(documents);
                                     log.info("[{}] Written {} documents to vector store.", filePath, count);
-                                    fileMoverHelper.moveProcessedFile(filePath);
+                                    fileMover.moveProcessedFile(filePath);
                                 })
                                 .subscribeOn(Schedulers.boundedElastic())
                 ).doOnError(e -> log.error("Pipeline error - ", e))
