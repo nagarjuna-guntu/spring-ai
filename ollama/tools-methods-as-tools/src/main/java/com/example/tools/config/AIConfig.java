@@ -1,9 +1,8 @@
 package com.example.tools.config;
 
-import com.example.tools.domain.game.GameTools;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
-import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
+import org.springframework.ai.chat.client.advisor.api.BaseAdvisor;
 import org.springframework.ai.chat.client.advisor.vectorstore.VectorStoreChatMemoryAdvisor;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
 import org.springframework.ai.rag.preretrieval.query.expansion.MultiQueryExpander;
@@ -11,11 +10,9 @@ import org.springframework.ai.rag.preretrieval.query.expansion.QueryExpander;
 import org.springframework.ai.rag.preretrieval.query.transformation.RewriteQueryTransformer;
 import org.springframework.ai.rag.preretrieval.query.transformation.TranslationQueryTransformer;
 import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
-import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.Ordered;
 
 @Configuration
 public class AIConfig {
@@ -37,7 +34,7 @@ public class AIConfig {
     VectorStoreChatMemoryAdvisor vectorStoreChatMemoryAdvisor(
             VectorStore vectorStore) {
         return VectorStoreChatMemoryAdvisor.builder(vectorStore)
-                .order(Ordered.HIGHEST_PRECEDENCE)
+                .order(BaseAdvisor.HIGHEST_PRECEDENCE + 200)
                 .build();
     }
 
