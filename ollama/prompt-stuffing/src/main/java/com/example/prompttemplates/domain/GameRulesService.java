@@ -13,14 +13,20 @@ import java.nio.charset.Charset;
 @Slf4j
 public class GameRulesService {
 
+    private final ResourceLoader resourceLoader;
+
+    public GameRulesService(ResourceLoader resourceLoader) {
+        this.resourceLoader = resourceLoader;
+    }
+
     public String loadGameRules(String gameName) {
         var fileName = String.format(
-                "/gameRules/%s.txt",
+                "classpath:/gameRules/%s.txt",
                 gameName.toLowerCase().replace(" ", "_")
         );
         log.info("trying to load file name : {}", fileName);
         try {
-            return new DefaultResourceLoader()
+            return resourceLoader
                     .getResource(fileName)
                     .getContentAsString(Charset.defaultCharset());
         } catch (IOException e) {

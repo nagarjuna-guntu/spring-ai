@@ -6,8 +6,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.function.Predicate;
-
 @RestController
 @RequestMapping("ask")
 public class AskController {
@@ -17,7 +15,7 @@ public class AskController {
         this.boardGameBuddyService = boardGameBuddyService;
     }
 
-    @PostMapping
+    @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public Answer ask(@RequestBody Question question) {
         return boardGameBuddyService.ask(question);
     }

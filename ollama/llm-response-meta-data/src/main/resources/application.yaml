@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: llm-response-meta-data
+
+spring.ai:
+  ollama:
+    base-url: http://localhost:11434
+    chat.options.model: llama3.2
+
+server:
+  port: 3001

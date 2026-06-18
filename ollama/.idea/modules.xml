@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/board-game-buddy.main.iml" filepath="$PROJECT_DIR$/.idea/modules/board-game-buddy.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/board-game-buddy.test.iml" filepath="$PROJECT_DIR$/.idea/modules/board-game-buddy.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/board-game-mcp-client.main.iml" filepath="$PROJECT_DIR$/.idea/modules/board-game-mcp-client.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/board-game-mcp-service.main.iml" filepath="$PROJECT_DIR$/.idea/modules/board-game-mcp-service.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/chat-memory-cassandra.main.iml" filepath="$PROJECT_DIR$/.idea/modules/chat-memory-cassandra.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/chat-memory-jdbc.main.iml" filepath="$PROJECT_DIR$/.idea/modules/chat-memory-jdbc.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/chat-memory-jdbc.test.iml" filepath="$PROJECT_DIR$/.idea/modules/chat-memory-jdbc.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/chat-memory-vector-store.main.iml" filepath="$PROJECT_DIR$/.idea/modules/chat-memory-vector-store.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/chat-memory.main.iml" filepath="$PROJECT_DIR$/.idea/modules/chat-memory.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/com.example.prompt-templates.main.iml" filepath="$PROJECT_DIR$/.idea/modules/com.example.prompt-templates.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/document-loader.main.iml" filepath="$PROJECT_DIR$/.idea/modules/document-loader.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/game-rules-rag.main.iml" filepath="$PROJECT_DIR$/.idea/modules/game-rules-rag.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/ollama.iml" filepath="$PROJECT_DIR$/.idea/ollama.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/prompt-roles.main.iml" filepath="$PROJECT_DIR$/.idea/modules/prompt-roles.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/prompt-template-resources.prompt-templates.main.iml" filepath="$PROJECT_DIR$/.idea/modules/prompt-template-resources.prompt-templates.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/prompt-templates.main.iml" filepath="$PROJECT_DIR$/.idea/modules/prompt-templates.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/rag-qa-advisor.main.iml" filepath="$PROJECT_DIR$/.idea/modules/rag-qa-advisor.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/rag-rag-advisor-query-transformer.main.iml" filepath="$PROJECT_DIR$/.idea/modules/rag-rag-advisor-query-transformer.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/rag-rag-advisor.main.iml" filepath="$PROJECT_DIR$/.idea/modules/rag-rag-advisor.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/tools-functions-as-tools.main.iml" filepath="$PROJECT_DIR$/.idea/modules/tools-functions-as-tools.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/tools-methods-as-tools.main.iml" filepath="$PROJECT_DIR$/.idea/modules/tools-methods-as-tools.main.iml" />
+    </modules>
+  </component>
+</project>

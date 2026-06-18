@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class BoardGameService {
 
-    @Value("classpath:/promptTemplates/systemPromptTemplate.st")
+    @Value("classpath:/promptTemplates/systemPrompt.st")
     Resource systemPromptTemplate;
 
     private final ChatClient chatClient;
