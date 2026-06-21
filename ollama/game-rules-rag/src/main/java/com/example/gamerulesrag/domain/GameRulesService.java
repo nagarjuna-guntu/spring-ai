@@ -28,8 +28,9 @@ public class GameRulesService {
 
         SearchRequest searchRequest = SearchRequest.builder()
                 .query(question)
-                //.similarityThreshold(0.5) //default is 0.0, range is 0.0 - 1.0
+                .similarityThreshold(0.5) //default is 0.0, range is 0.0 - 1.0
                 .filterExpression(gameTitleFilterExpression)
+                .topK(6) // default is 4
                 .build();
         List<Document> documents = vectorStore.similaritySearch(searchRequest);
 
@@ -37,6 +38,8 @@ public class GameRulesService {
             log.info("No similar documents are available for the game : {} .", normalizedTitle(gameTitle));
             return String.format("The rules for %s are not available.", gameTitle);
         }
+
+        log.info("{} similar documents found for the game : {} .", documents.size(), gameTitle);
 
         return documents.stream()
                 .map(Document::getText)

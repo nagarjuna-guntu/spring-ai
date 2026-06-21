@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class BoardGameService {
 
-    @Value("classpath:/promptTemplates/systemPromptTemplate.st")
+    @Value("classpath:/promptTemplates/systemPrompt.st")
     Resource promptTemplate;
 
     private final ChatClient chatClient;
@@ -27,7 +27,7 @@ public class BoardGameService {
                 "gameTitle == '%s'", question.normalizeTitle());
 
 
-        var answerText = chatClient.prompt()
+        return chatClient.prompt()
                 .system(promptSystemSpec -> promptSystemSpec
                         .text(promptTemplate)
                         .param("gameTitle", question.gameTitle())
@@ -37,8 +37,8 @@ public class BoardGameService {
                         .param(QuestionAnswerAdvisor.FILTER_EXPRESSION, gameNameMatchExpression)
                 )
                 .call()
-                .content();
-        return new Answer(question.gameTitle(), answerText);
+                .entity(Answer.class);
+
 
     }
 }

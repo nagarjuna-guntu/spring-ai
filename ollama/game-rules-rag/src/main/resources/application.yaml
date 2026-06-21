@@ -9,7 +9,7 @@ spring.ai:
   ollama:
     base-url: http://localhost:11434
     chat.options.model: llama3.2
-    embedding.options.model: nomic-embed-text-v2-moe
+    embedding.options.model: nomic-embed-text-v2-moe #bge-m3
     init.pull-model-strategy: when_missing
   vectorstore:
     qdrant:

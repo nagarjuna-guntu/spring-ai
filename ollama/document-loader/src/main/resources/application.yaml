@@ -9,7 +9,7 @@ spring.ai:
   ollama:
     base-url: http://localhost:11434
     chat.options.model: llama3.2
-    embedding.options.model: nomic-embed-text-v2-moe
+    embedding.options.model: nomic-embed-text-v2-moe  # bge-m3
     init.pull-model-strategy: when_missing
   vectorstore:
     qdrant:
@@ -27,10 +27,29 @@ spring.cloud:
   function:
     definition: fileSupplier|documentReader|documentSplitter|titleDeterminer|documentConsumer
 
-
 file.supplier:
-  directory: D:/documents/dropoff
+  directory: ${FILE_SUPPLIER_DIRECTORY:D:/documents/dropoff}
   filename-regex: .*\.(pdf|docx|txt)
-  delay-when-empty: 5s
-  prevent-duplicates: true
+  delay-when-empty-seconds: 5
+  #prevent-duplicates: true <-- Remove or set false to prevent conflicting filters, uses in memory to prevent duplicate processing instead use redis to check the duplicate file processing
 
+spring.integration:
+  metadata:
+    namespace: etl-file-metadata
+    key-prefix: document-pipeline
+
+etl:
+  pipeline:
+    timeout-seconds: 20
+    max-concurrent-titles: 2
+    backpressure-buffer-size: 100
+    redis-key-prefix: document-pipeline
+    token-splitter:
+      chunk-size: 512
+      min-chunk-size-chars: 128
+      max-chunk-size: 3000
+
+document:
+  paths:
+    processed: ${DOCUMENTS_PROCESSED_DIR:D:/documents/processed}
+    dlq: ${DOCUMENTS_DLQ_DIR:D:/documents/DLQ}

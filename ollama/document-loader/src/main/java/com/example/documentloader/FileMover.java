@@ -12,12 +12,18 @@ import java.nio.file.StandardCopyOption;
 @Component
 public class FileMover {
 
+    private final DocumentPaths documentPaths;
+
+    public FileMover(DocumentPaths documentPaths) {
+        this.documentPaths = documentPaths;
+    }
+
     public void moveProcessedFile(String filePath) {
-        moveFile(filePath, "D:/documents/processed");
+        moveFile(filePath, documentPaths.processed());
     }
 
     public void moveToDLQ(File file) {
-        moveFile(file.getAbsolutePath(), "D:/documents/DLQ");
+        moveFile(file.getAbsolutePath(), documentPaths.dlq());
     }
 
     private void moveFile(String filePath, String targetDirPath) {

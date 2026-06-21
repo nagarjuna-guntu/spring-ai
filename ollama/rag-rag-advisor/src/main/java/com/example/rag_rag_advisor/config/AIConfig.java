@@ -19,21 +19,25 @@ public class AIConfig {
     ChatClient chatClient(ChatClient.Builder chatClientBuilder, VectorStore vectorStore) {
 
         QueryTransformer reWriteQueryTransformer = RewriteQueryTransformer.builder()
-                .chatClientBuilder(chatClientBuilder)
+                .chatClientBuilder(chatClientBuilder.build().mutate())
                 .build();
 
+
         QueryTransformer translationQueryTransformer = TranslationQueryTransformer.builder()
-                .chatClientBuilder(chatClientBuilder)
+                .chatClientBuilder(chatClientBuilder.build().mutate())
                 .targetLanguage("English")
                 .build();
 
+
+        DocumentRetriever documentRetriever = VectorStoreDocumentRetriever.builder()
+                .vectorStore(vectorStore)
+                //.similarityThreshold(0.78)
+                //.topK(8)
+                .build();
+
         var advisor = RetrievalAugmentationAdvisor.builder()
-                .documentRetriever(
-                        VectorStoreDocumentRetriever.builder()
-                                .vectorStore(vectorStore)
-                                .build()
-                )
                 .queryTransformers(translationQueryTransformer, reWriteQueryTransformer)
+                .documentRetriever(documentRetriever)
                 .build();
         return chatClientBuilder
                 .defaultAdvisors(advisor)

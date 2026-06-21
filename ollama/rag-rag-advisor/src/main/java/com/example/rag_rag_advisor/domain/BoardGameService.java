@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class BoardGameService {
 
-    @Value("classpath:/promptTemplates/systemPromptTemplate.st")
+    @Value("classpath:/promptTemplates/systemPrompt.st")
     Resource promptTemplate;
 
     private final ChatClient chatClient;
