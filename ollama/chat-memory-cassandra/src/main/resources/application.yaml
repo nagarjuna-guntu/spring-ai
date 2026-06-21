@@ -17,7 +17,7 @@ spring.ai:
       port: 6334
       initialize-schema: true
       collection-name: game-rules
-  chat.memory.repository:
+  chat.memory:
     cassandra:
       keyspace: boardgamebuddy
       table: chat_memory
@@ -27,6 +27,5 @@ spring.ai:
 
 
 spring.cassandra:
-  contact-points: localhost
-  port: 9042
+  contact-points: 127.0.0.1:9042
   local-datacenter: datacenter1

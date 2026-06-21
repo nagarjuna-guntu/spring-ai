@@ -1,9 +1,9 @@
 package com.example.chatmemory.config;
 
+
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
-import org.springframework.ai.chat.memory.ChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.memory.repository.cassandra.CassandraChatMemoryRepository;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
@@ -30,8 +30,12 @@ public class AIConfig {
                 .build();
     }
 
+    //implementation 'org.springframework.ai:spring-ai-starter-model-chat-memory-repository-cassandra'
+    //	implementation 'org.springframework.boot:spring-boot-starter-cassandra'
+    // added these 2 dependencies for cql-session works with autoconfiguration
     @Bean
     ChatMemory chatMemory(CassandraChatMemoryRepository cassandraChatMemoryRepository) {
+
         return MessageWindowChatMemory.builder()
                 .chatMemoryRepository(cassandraChatMemoryRepository)
                 .maxMessages(10) // default is 20
@@ -57,7 +61,7 @@ public class AIConfig {
     @Bean
     QueryExpander multiQueryExpander(ChatClient.Builder chatClientBuilder) {
         return MultiQueryExpander.builder()
-                .chatClientBuilder(chatClientBuilder)
+                .chatClientBuilder(chatClientBuilder.build().mutate())
                 .numberOfQueries(3)
                 .includeOriginal(true)
                 .build();
@@ -72,7 +76,7 @@ public class AIConfig {
     @Bean
     RewriteQueryTransformer rewriteQueryTransformer(ChatClient.Builder chatClientBuilder) {
         return RewriteQueryTransformer.builder()
-                .chatClientBuilder(chatClientBuilder)
+                .chatClientBuilder(chatClientBuilder.build().mutate())
                 .build();
 
     }
@@ -80,7 +84,7 @@ public class AIConfig {
     @Bean
     TranslationQueryTransformer translationQueryTransformer(ChatClient.Builder chatClientBuilder) {
         return TranslationQueryTransformer.builder()
-                .chatClientBuilder(chatClientBuilder)
+                .chatClientBuilder(chatClientBuilder.build().mutate())
                 .targetLanguage("English")
                 .build();
 

@@ -17,7 +17,7 @@ public class BoardGameService {
     private final ChatClient chatClient;
 
     public BoardGameService(
-            @Value("classpath:/promptTemplates/systemPromptTemplate.st")Resource promptTemplate,
+            @Value("classpath:/promptTemplates/systemPrompt.st")Resource promptTemplate,
             ChatClient chatClient) {
         this.promptTemplate = promptTemplate;
         this.chatClient = chatClient;
