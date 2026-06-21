@@ -1,4 +1,4 @@
-package com.example.chatmemory.domain;
+package com.example.chatmemoryredis.domain;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -17,7 +17,7 @@ public class BoardGameService {
     private final ChatClient chatClient;
 
     public BoardGameService(
-            @Value("classpath:/promptTemplates/systemPrompt.st")Resource promptTemplate,
+            @Value("classpath:/promptTemplates/systemPrompt.st") Resource promptTemplate,
             ChatClient chatClient) {
         this.promptTemplate = promptTemplate;
         this.chatClient = chatClient;
