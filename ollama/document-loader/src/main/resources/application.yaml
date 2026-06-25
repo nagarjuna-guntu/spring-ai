@@ -28,7 +28,7 @@ spring.cloud:
     definition: fileSupplier|documentReader|documentSplitter|titleDeterminer|documentConsumer
 
 file.supplier:
-  directory: ${FILE_SUPPLIER_DIRECTORY:D:/documents/dropoff}
+  directory: ${FILE_SUPPLIER_DIRECTORY:D:/board-game-buddy-rules/documents/dropoff}
   filename-regex: .*\.(pdf|docx|txt)
   delay-when-empty-seconds: 5
   #prevent-duplicates: true <-- Remove or set false to prevent conflicting filters, uses in memory to prevent duplicate processing instead use redis to check the duplicate file processing
@@ -45,11 +45,11 @@ etl:
     backpressure-buffer-size: 100
     redis-key-prefix: document-pipeline
     token-splitter:
-      chunk-size: 512
-      min-chunk-size-chars: 128
-      max-chunk-size: 3000
+      chunk-size: 750
+      min-chunk-size-chars: 350
+      max-chunk-size: 9000
 
 document:
   paths:
-    processed: ${DOCUMENTS_PROCESSED_DIR:D:/documents/processed}
-    dlq: ${DOCUMENTS_DLQ_DIR:D:/documents/DLQ}
+    processed: ${DOCUMENTS_PROCESSED_DIR:D:/board-game-buddy-rules/documents/processed}
+    dlq: ${DOCUMENTS_DLQ_DIR:D:/board-game-buddy-rules/documents/DLQ}

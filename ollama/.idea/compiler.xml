@@ -5,17 +5,17 @@
       <profile name="Gradle Imported" enabled="true">
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="false">
+          <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-configuration-processor/4.1.0/c3e27f93b579220e4e18fe941321525200eb36b/spring-boot-configuration-processor-4.1.0.jar" />
           <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.projectlombok/lombok/1.18.46/a5cfe99fdf320e84955ef653f2ce1bf789d11385/lombok-1.18.46.jar" />
         </processorPath>
-        <module name="chat-memory-vector-store.test" />
+        <module name="summarizing-content.main" />
       </profile>
       <profile name="Gradle Imported" enabled="true">
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="false">
-          <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-configuration-processor/4.1.0/c3e27f93b579220e4e18fe941321525200eb36b/spring-boot-configuration-processor-4.1.0.jar" />
           <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.projectlombok/lombok/1.18.46/a5cfe99fdf320e84955ef653f2ce1bf789d11385/lombok-1.18.46.jar" />
         </processorPath>
-        <module name="chat-memory-vector-store.main" />
+        <module name="summarizing-content.test" />
       </profile>
     </annotationProcessing>
   </component>
@@ -75,6 +75,12 @@
       <module name="rag-rag-advisor-query-transformer.test" options="-parameters" />
       <module name="rag-rag-advisor.main" options="-parameters" />
       <module name="rag-rag-advisor.test" options="-parameters" />
+      <module name="summarizing-content" options="-parameters" />
+      <module name="summarizing-content.main" options="-parameters" />
+      <module name="summarizing-content.test" options="-parameters" />
+      <module name="tools-current-time" options="-parameters" />
+      <module name="tools-current-time.main" options="-parameters" />
+      <module name="tools-current-time.test" options="-parameters" />
       <module name="tools-functions-as-tools" options="-parameters" />
       <module name="tools-functions-as-tools.main" options="-parameters" />
       <module name="tools-functions-as-tools.test" options="-parameters" />

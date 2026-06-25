@@ -1,11 +1,10 @@
 package com.example.tools.domain;
 
-import com.example.tools.config.FunctionToolsConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.client.advisor.ToolCallAdvisor;
 import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.tool.ToolCallback;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -17,12 +16,15 @@ public class BoardGameService {
 
     private final Resource promptTemplate;
     private final ChatClient chatClient;
+    private final ToolCallback gameComplexityByTitle;
 
     public BoardGameService(
-            @Value("classpath:/promptTemplates/systemPromptTemplate.st")Resource promptTemplate,
-            ChatClient chatClient) {
+            @Value("classpath:/promptTemplates/systemPrompt.st") Resource promptTemplate,
+            ChatClient chatClient, ToolCallback gameComplexityByTitle) {
         this.promptTemplate = promptTemplate;
         this.chatClient = chatClient;
+
+        this.gameComplexityByTitle = gameComplexityByTitle;
     }
 
     public Answer askQuestion(Question question, String chatId) {
@@ -41,7 +43,7 @@ public class BoardGameService {
                         .param(QuestionAnswerAdvisor.FILTER_EXPRESSION, gameNameMatchExpression)
                         .param(ChatMemory.CONVERSATION_ID, chatId)
                 )
-                .toolNames(FunctionToolsConfig.GAME_COMPLEXITY)
+                .tools(gameComplexityByTitle)
                 .call()
                 .content();
         return new Answer(question.gameTitle(), answerText);

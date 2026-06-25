@@ -19,13 +19,13 @@ public class AIConfig {
 
     @Bean
     ChatClient chatClient(ChatClient.Builder chatClientBuilder, VectorStore vectorStore
-                          ) {
+    ) {
 
         return chatClientBuilder
                 .defaultAdvisors(
                         SimpleLoggerAdvisor.builder().build(),
                         vectorStoreChatMemoryAdvisor(vectorStore),
-                        retrievalAugmentationAdvisor(chatClientBuilder,vectorStore)
+                        retrievalAugmentationAdvisor(chatClientBuilder, vectorStore)
                 )
                 .build();
     }
@@ -58,7 +58,7 @@ public class AIConfig {
     @Bean
     QueryExpander multiQueryExpander(ChatClient.Builder chatClientBuilder) {
         return MultiQueryExpander.builder()
-                .chatClientBuilder(chatClientBuilder)
+                .chatClientBuilder(chatClientBuilder.build().mutate())
                 .numberOfQueries(3)
                 .includeOriginal(true)
                 .build();
@@ -67,7 +67,7 @@ public class AIConfig {
     @Bean
     RewriteQueryTransformer rewriteQueryTransformer(ChatClient.Builder chatClientBuilder) {
         return RewriteQueryTransformer.builder()
-                .chatClientBuilder(chatClientBuilder)
+                .chatClientBuilder(chatClientBuilder.build().mutate())
                 .build();
 
     }
@@ -75,7 +75,7 @@ public class AIConfig {
     @Bean
     TranslationQueryTransformer translationQueryTransformer(ChatClient.Builder chatClientBuilder) {
         return TranslationQueryTransformer.builder()
-                .chatClientBuilder(chatClientBuilder)
+                .chatClientBuilder(chatClientBuilder.build().mutate())
                 .targetLanguage("English")
                 .build();
 

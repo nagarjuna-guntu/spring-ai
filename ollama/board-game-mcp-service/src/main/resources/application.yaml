@@ -1,6 +1,7 @@
 spring:
   application:
     name: board-game-mcp-service
+
 server:
   port: 4040
 
@@ -10,6 +11,8 @@ spring.ai.mcp:
     version: 1.0.0
     protocol: STREAMABLE
     type: sync
+    annotation-scanner:
+      enabled: true
 
 spring.datasource:
   username: user
@@ -19,6 +22,7 @@ spring.datasource:
 spring.sql:
   init:
     mode: always
+    continue-on-error: true
 
 logging.level:
   org.springframework.ai: DEBUG

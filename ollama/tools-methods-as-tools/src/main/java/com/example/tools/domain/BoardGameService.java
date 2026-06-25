@@ -3,8 +3,6 @@ package com.example.tools.domain;
 import com.example.tools.domain.game.GameTools;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.client.advisor.ToolCallAdvisor;
-import org.springframework.ai.chat.client.advisor.api.BaseAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,7 +19,7 @@ public class BoardGameService {
     private final GameTools gameTools;
 
     public BoardGameService(
-            @Value("classpath:/promptTemplates/systemPromptTemplate.st")Resource promptTemplate,
+            @Value("classpath:/promptTemplates/systemPrompt.st") Resource promptTemplate,
             ChatClient chatClient, GameTools gameTools) {
         this.promptTemplate = promptTemplate;
         this.chatClient = chatClient;
@@ -44,10 +42,6 @@ public class BoardGameService {
                         .param(VectorStoreDocumentRetriever.FILTER_EXPRESSION, gameNameMatchExpression)
                         .param(ChatMemory.CONVERSATION_ID, chatId)
                 )
-                .advisors(ToolCallAdvisor.builder()
-                        .disableInternalConversationHistory()
-                        .advisorOrder(BaseAdvisor.HIGHEST_PRECEDENCE + 300)
-                        .build())
                 .tools(gameTools)
                 .call()
                 .content();

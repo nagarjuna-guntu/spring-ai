@@ -15,13 +15,13 @@ public class GameService {
 
     public GameComplexityResponse getGameComplexity(GameComplexityRequest gameComplexityRequest) {
         var gameSlug = gameComplexityRequest.title().toLowerCase().replace(" ", "_");
-        log.info("getting the complexity for the game - {} ",  gameSlug);
+        log.info("getting the complexity for the game - {} ", gameSlug);
         return gameRepository.findBySlug(gameSlug)
                 .map(game ->
                         GameComplexityResponse.of(game.title(), game.complexityEnum()))
                 .orElseGet(() -> {
                     log.warn("Game not found: {}", gameSlug);
-                    return GameComplexityResponse.of(Game.UNKOWN_GAME.title(), Game.UNKOWN_GAME.complexityEnum());
+                    return GameComplexityResponse.of(gameComplexityRequest.title(), GameComplexity.UNKNOWN);
                 });
     }
 }

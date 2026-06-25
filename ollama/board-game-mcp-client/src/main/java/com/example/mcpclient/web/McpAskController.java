@@ -4,8 +4,7 @@ import com.example.mcpclient.domain.Answer;
 import com.example.mcpclient.domain.Question;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
-import org.springframework.ai.tool.ToolCallbackProvider;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -22,23 +21,21 @@ public class McpAskController {
 
     private final ChatClient chatClient;
 
-    public McpAskController(ChatClient.Builder chatClientBuilder, ToolCallbackProvider toolCallbackProvider) {
-        this.chatClient = chatClientBuilder
-                .defaultAdvisors(SimpleLoggerAdvisor.builder().build())
-                .defaultToolCallbacks(toolCallbackProvider)
-                .build();
-
+    public McpAskController(ChatClient chatClient) {
+        this.chatClient = chatClient;
     }
 
-    @PostMapping("/ask")
+    @PostMapping(value = "/ask", produces = MediaType.APPLICATION_JSON_VALUE)
     public Answer ask(@RequestBody Question question) {
         log.info("calling chat client with the question - {}", question.question());
         var answer = chatClient.prompt()
                 .system(SYSTEM_PROMPT)
                 .user(question.question())
                 .call()
-                .content();
+                .entity(Answer.class, entityParamSpec -> entityParamSpec
+                        .useProviderStructuredOutput()
+                        .validateSchema());
         log.info("The response from the mcp server - {}", answer);
-        return new Answer(answer);
+        return (answer);
     }
 }

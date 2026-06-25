@@ -11,14 +11,19 @@ spring.ai:
     chat.options.model: llama3.2
     embedding.options.model: nomic-embed-text-v2-moe
     init.pull-model-strategy: when_missing
-  mcp:
-    client:
-      streamable-http:
-        connections:
-          board-game-mcp-server:
-            url: http://localhost:4040
-      type: sync
+  mcp.client:
+    name: board-game-mcp-client
+    version: 1.0.0
+    type: SYNC
+    toolcallback:
+      enabled: true
+    streamable-http:
+      connections:
+        board-game-mcp-server:
+          url: http://localhost:4040
+          endpoint: /mcp
+
 
 logging.level:
   org.springframework.ai: DEBUG
-  com.example.mcpservice: DEBUG
+  com.example.mcpclient: DEBUG

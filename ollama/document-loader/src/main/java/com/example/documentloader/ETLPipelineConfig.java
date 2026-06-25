@@ -30,13 +30,15 @@ public class ETLPipelineConfig {
 
 
     private final Resource gameNamePrompt;
+    private final ChatClient chatClient;
     private final FileMover fileMover;
     private final ConcurrentMetadataStore metadataStore;
     private final ETLPipelineProperties etlPipelineProperties;
 
-    public ETLPipelineConfig(@Value("classpath:/promptTemplates/game-name-prompt.st") Resource gameNamePrompt,
+    public ETLPipelineConfig(@Value("classpath:/promptTemplates/game-name-prompt.st") Resource gameNamePrompt, ChatClient chatClient,
                              FileMover fileMover, ConcurrentMetadataStore metadataStore, ETLPipelineProperties etlPipelineProperties) {
         this.gameNamePrompt = gameNamePrompt;
+        this.chatClient = chatClient;
         this.fileMover = fileMover;
         this.metadataStore = metadataStore;
         this.etlPipelineProperties = etlPipelineProperties;
@@ -63,18 +65,18 @@ public class ETLPipelineConfig {
         return documentFlux -> documentFlux
                 .map(document -> {
                     var path = getFilePath(List.of(document));
-                    log.info("[{}] document splitting initialized - ", path );
+                    log.info("[{}] document splitting initialized - ", path);
                     return splitter.apply(List.of(document));
                 });
     }
 
     @Bean
-    Function<Flux<List<Document>>, Flux<List<Document>>> titleDeterminer(ChatClient.Builder chatClientBuilder) {
-        var chatClient = chatClientBuilder.build();
+    Function<Flux<List<Document>>, Flux<List<Document>>> titleDeterminer(ChatClient chatClient) {
+
         return listFlux -> listFlux
                 .onBackpressureBuffer(etlPipelineProperties.backpressureBufferSize())
                 .filter(documents -> !documents.isEmpty())
-                .flatMap(documents -> determineDocumentTitleByLLM(documents, chatClient), etlPipelineProperties.maxConcurrentTitles() );
+                .flatMap(documents -> determineDocumentTitleByLLM(documents, chatClient), etlPipelineProperties.maxConcurrentTitles());
     }
 
     @Bean
@@ -105,7 +107,7 @@ public class ETLPipelineConfig {
         rollbackRedisMetadata(filePath);
     }
 
-    private Mono<Document> readDocument(Message<byte[]> message, File file, String path ) {
+    private Mono<Document> readDocument(Message<byte[]> message, File file, String path) {
         return Mono.fromCallable(() -> {
                     log.info("[{}] Reading file", path);
                     var documents = new TikaDocumentReader(new ByteArrayResource(message.getPayload())
@@ -135,6 +137,7 @@ public class ETLPipelineConfig {
         rollbackRedisMetadata(path);
         return Mono.just(Collections.emptyList());
     }
+
     private File extractAndValidateFile(Message<byte[]> message) {
         Object fileObj = message.getHeaders().get("file_originalFile");
         if (fileObj instanceof File file && file.exists()) {
@@ -156,7 +159,7 @@ public class ETLPipelineConfig {
 
         return Mono.fromCallable(() -> {
                     String combinedText = documents.stream()
-                            .limit(3)
+                            .limit(2)
                             .map(Document::getText)
                             .collect(Collectors.joining(System.lineSeparator()));
 
@@ -167,7 +170,9 @@ public class ETLPipelineConfig {
                                     .text(gameNamePrompt)
                                     .param("document", combinedText))
                             .call()
-                            .entity(GameTitle.class);
+                            .entity(GameTitle.class, entityParamSpec -> entityParamSpec
+                                    .useProviderStructuredOutput()
+                                    .validateSchema());
 
                     if (gameTitle == null || !gameTitle.isValid()) {
                         log.warn("[{}] LLM returned invalid game title.", path);

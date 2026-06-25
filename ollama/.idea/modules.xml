@@ -23,6 +23,7 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/rag-qa-advisor.main.iml" filepath="$PROJECT_DIR$/.idea/modules/rag-qa-advisor.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/rag-rag-advisor-query-transformer.main.iml" filepath="$PROJECT_DIR$/.idea/modules/rag-rag-advisor-query-transformer.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/rag-rag-advisor.main.iml" filepath="$PROJECT_DIR$/.idea/modules/rag-rag-advisor.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/tools-current-time.main.iml" filepath="$PROJECT_DIR$/.idea/modules/tools-current-time.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/tools-functions-as-tools.main.iml" filepath="$PROJECT_DIR$/.idea/modules/tools-functions-as-tools.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/tools-methods-as-tools.main.iml" filepath="$PROJECT_DIR$/.idea/modules/tools-methods-as-tools.main.iml" />
     </modules>

@@ -30,7 +30,7 @@ public class GameTools {
                         GameComplexityResponse.of(game.title(), game.complexityEnum()))
                 .orElseGet(() -> {
                     log.warn("Game not found: {}", gameSlug);
-                    return GameComplexityResponse.of(Game.UNKOWN_GAME.title(), Game.UNKOWN_GAME.complexityEnum());
+                    return GameComplexityResponse.of(gameTitle, GameComplexity.UNKNOWN);
                 });
     }
 }

@@ -11,7 +11,7 @@ public record FileSupplierProperties(
         Integer delayWhenEmptySeconds
 ) {
     public FileSupplierProperties {
-        directory = Objects.requireNonNullElse(directory, "D:/documents/dropoff");
+        directory = Objects.requireNonNullElse(directory, "D:/board-game-buddy-rules/documents/dropoff");
         filenameRegex = Objects.requireNonNullElse(filenameRegex, ".*\\.(pdf|docx|txt)");
         delayWhenEmptySeconds = Objects.requireNonNullElse(delayWhenEmptySeconds, 5);
     }
