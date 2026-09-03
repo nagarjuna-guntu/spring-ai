@@ -23,7 +23,6 @@ spring.ai:
           url: http://localhost:4040
           endpoint: /mcp
 
-
 logging.level:
   org.springframework.ai: DEBUG
   com.example.mcpclient: DEBUG

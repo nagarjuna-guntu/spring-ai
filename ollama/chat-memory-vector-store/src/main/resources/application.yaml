@@ -17,3 +17,6 @@ spring.ai:
       port: 6334
       initialize-schema: true
       collection-name: game-rules
+
+logging.level:
+  org.springframework.ai: DEBUG

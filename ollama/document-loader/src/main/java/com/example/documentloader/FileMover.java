@@ -3,7 +3,6 @@ package com.example.documentloader;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -22,8 +21,8 @@ public class FileMover {
         moveFile(filePath, documentPaths.processed());
     }
 
-    public void moveToDLQ(File file) {
-        moveFile(file.getAbsolutePath(), documentPaths.dlq());
+    public void moveToDLQ(String filePath) {
+        moveFile(filePath, documentPaths.dlq());
     }
 
     private void moveFile(String filePath, String targetDirPath) {

@@ -1,14 +1,13 @@
 package com.example.chatmemory.web;
 
 
-
-
-
 import com.example.chatmemory.domain.Answer;
 import com.example.chatmemory.domain.BoardGameService;
 import com.example.chatmemory.domain.Question;
 import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -24,8 +23,9 @@ public class AskController {
     }
 
     @PostMapping(value = "/ask", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Answer ask(@RequestHeader(name = "X_AI_CHAT_ID", defaultValue = "default") String chatId,
-            @RequestBody @Valid Question question) {
-        return boardGameService.askQuestion(question, chatId);
+    public Answer ask(@AuthenticationPrincipal UserDetails user,
+                      @RequestHeader(name = "X_AI_CHAT_ID", defaultValue = "default") String chatId,
+                      @RequestBody @Valid Question question) {
+        return boardGameService.askQuestion(question, user.getUsername() + "_" + chatId);
     }
 }

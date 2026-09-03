@@ -1,6 +1,7 @@
 package com.example.chatmemory.config;
 
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.chat.client.advisor.vectorstore.VectorStoreChatMemoryAdvisor;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
 import org.springframework.ai.rag.preretrieval.query.expansion.MultiQueryExpander;
@@ -21,6 +22,7 @@ public class AIConfig {
 
         return chatClientBuilder
                 .defaultAdvisors(
+                        new SimpleLoggerAdvisor(),
                         vectorStoreChatMemoryAdvisor(vectorStore),
                         retrievalAugmentationAdvisor(chatClientBuilder, vectorStore)
                 )

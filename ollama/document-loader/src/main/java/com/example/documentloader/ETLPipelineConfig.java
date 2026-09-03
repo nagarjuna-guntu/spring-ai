@@ -47,12 +47,12 @@ public class ETLPipelineConfig {
     @Bean
     Function<Flux<Message<byte[]>>, Flux<Document>> documentReader() {
         return messageFlux -> messageFlux
-                .publishOn(Schedulers.boundedElastic())
-                .flatMap(message -> {
-                    File file = extractAndValidateFile(message);
-                    var path = file.getAbsolutePath();
-                    return readDocument(message, file, path);
-                });
+                .flatMap(message -> processDocumentRead(message)
+                        .onErrorResume(ex -> {
+                            var path = extractAndValidateFile(message).getAbsolutePath();
+                            return handleDocumentReadError(path, ex);
+                        })
+                );
     }
 
     @Bean
@@ -63,28 +63,46 @@ public class ETLPipelineConfig {
                 .withKeepSeparator(true)
                 .build();
         return documentFlux -> documentFlux
-                .map(document -> {
+                .flatMap(document -> {
                     var path = getFilePath(List.of(document));
-                    log.info("[{}] document splitting initialized - ", path);
-                    return splitter.apply(List.of(document));
-                });
+                    return Mono.fromCallable(() -> {
+                                log.info("[{}] document splitting START - ", path);
+                                var chunks = splitter.apply(List.of(document));
+                                log.info("[{}] document splitting COMPLETED with chunks size : {}", path, chunks.size());
+                                return chunks;
+                            })
+                            .subscribeOn(Schedulers.boundedElastic())
+                            .timeout(
+                                    Duration.ofSeconds(20),
+                                    Mono.error(new java.util.concurrent.TimeoutException("File splitting took too long!"))
+                            )
+                            .onErrorResume(ex -> {
+                                log.error("Failed to split document chunks: {}", ex.getMessage());
+                                // Handle the error and move the file to DLQ // Ignore bad chunks, move forward
+                                return handleDocumentSplitterError(path, ex);
+                            });
+                }, 1); // Limit concurrency to 1 to avoid overwhelming the system with too many split operations
     }
 
     @Bean
     Function<Flux<List<Document>>, Flux<List<Document>>> titleDeterminer(ChatClient chatClient) {
-
         return listFlux -> listFlux
                 .onBackpressureBuffer(etlPipelineProperties.backpressureBufferSize())
                 .filter(documents -> !documents.isEmpty())
-                .flatMap(documents -> determineDocumentTitleByLLM(documents, chatClient), etlPipelineProperties.maxConcurrentTitles());
+                .flatMap(documents -> determineDocumentTitleByLLM(documents, chatClient)
+                        .onErrorResume(ex -> handleTitleDeterminationError(getFilePath(documents), ex)), etlPipelineProperties.maxConcurrentTitles());
     }
 
     @Bean
     Function<Flux<List<Document>>, Mono<Void>> documentConsumer(VectorStore vectorStore) {
         return listFlux -> listFlux
                 .filter(documents -> !documents.isEmpty())
-                .flatMap(documents -> persistDocuments(documents, vectorStore))
-                .then();
+                .flatMap(documents -> persistDocuments(documents, vectorStore)
+                        .onErrorResume(_ -> {
+                            log.error("File [{}] Consumer processing dropped an item due to error.", getFilePath(documents));
+                            return Mono.empty(); // Ignore bad chunks, move forward
+                        })
+                ).then();
     }
 
     private Mono<Void> persistDocuments(List<Document> documents, VectorStore vectorStore) {
@@ -92,9 +110,9 @@ public class ETLPipelineConfig {
         int count = documents.size();
 
         return Mono.fromRunnable(() -> {
-                    log.info("[{}] Loading {} documents to vector store", filePath, count);
+                    log.info("File [{}] with documents count {}: Vector store loading STARTED.", filePath, count);
                     vectorStore.accept(documents);
-                    log.info("[{}] Successfully loaded {} documents to vector store", filePath, count);
+                    log.info("File [{}] with documents count {}: Vector store loading COMPLETED.", filePath, count);
                     fileMover.moveProcessedFile(filePath);
                 })
                 .subscribeOn(Schedulers.boundedElastic())
@@ -103,8 +121,18 @@ public class ETLPipelineConfig {
     }
 
     private void handleVectorStoreError(String filePath, Throwable ex) {
-        log.error("[{}] Failed to persist documents: {}", filePath, ex.getMessage(), ex);
+        log.error("File [{}] Failed to persist documents: {}", filePath, ex.getMessage(), ex);
+        fileMover.moveToDLQ(filePath);
         rollbackRedisMetadata(filePath);
+    }
+
+    private Mono<Document> processDocumentRead(Message<byte[]> message) {
+        return Mono.defer(() -> {
+            File file = extractAndValidateFile(message);
+            String path = file.getAbsolutePath();
+            return readDocument(message, file, path)
+                    .timeout(Duration.ofSeconds(etlPipelineProperties.timeoutSeconds()));
+        });
     }
 
     private Mono<Document> readDocument(Message<byte[]> message, File file, String path) {
@@ -114,26 +142,74 @@ public class ETLPipelineConfig {
                     ).get();
                     if (documents.isEmpty()) {
                         log.info("Extracted document contains no structured data.");
-                        throw new RuntimeException("Extracted document contains no structured data chunks.");
+                        throw new IllegalStateException("Extracted document contains no structured data chunks.");
                     }
                     var document = documents.getFirst();
+                    if (document.getText() == null || document.getText().isBlank()) {
+                        log.info("Extracted document contains no text.");
+                        throw new IllegalStateException("Extracted document contains no text.");
+                    }
                     document.getMetadata().put("file_originalFile_path", path);
+                    if (isPremiumDocument(file)) {
+                        log.info("[{}] Document is identified as PREMIUM.", path);
+                        document.getMetadata().put("documentType", "PREMIUM");
+                    }
                     return document;
                 })
-                .subscribeOn(Schedulers.boundedElastic())
-                .timeout(Duration.ofSeconds(etlPipelineProperties.timeoutSeconds()))
-                .onErrorResume(ex -> handleDocumentReadError(file, path, ex));
+                .subscribeOn(Schedulers.boundedElastic());
     }
 
-    private Mono<Document> handleDocumentReadError(File file, String path, Throwable ex) {
-        log.info("[{}] Core Read Failed. Re-routing payload to DLQ.", path, ex);
-        fileMover.moveToDLQ(file);
-        rollbackRedisMetadata(path);
+    private boolean isPremiumDocument(File file) {
+        var fileName = file.toPath().getFileName().toString();
+        log.info("[{}] Checking if file contains premium tag.", fileName);
+        int lastDotIndex = fileName.lastIndexOf('.');
+        var baseFileName = lastDotIndex != -1 ? fileName.substring(0, lastDotIndex) : fileName;
+        return baseFileName.endsWith("-premium");
+    }
+
+    private Mono<List<Document>> handleDocumentSplitterError(String path, Throwable ex) {
+        switch (ex) {
+            case java.util.concurrent.TimeoutException timeoutEx ->
+                    log.error("[{}] Document read timed out: {}", path, timeoutEx.getMessage(), timeoutEx);
+            case IllegalArgumentException illegalArgEx ->
+                    log.error("[{}] Invalid file reference: {}", path, illegalArgEx.getMessage(), illegalArgEx);
+            case Throwable throwable ->
+                    log.error("[{}] Document read failed: {}", path, throwable.getMessage(), throwable);
+        }
+        try {
+            log.info("[{}] Read Failed. Re-routing file to DLQ.", path, ex);
+            fileMover.moveToDLQ(path);
+            rollbackRedisMetadata(path);
+        } catch (Exception moveEx) {
+            log.error("[{}] Failed to move file to DLQ: {}", path, moveEx.getMessage(), moveEx);
+        }
+        return Mono.just(Collections.emptyList());
+    }
+
+    private Mono<Document> handleDocumentReadError(String path, Throwable ex) {
+        switch (ex) {
+            case java.util.concurrent.TimeoutException timeoutEx ->
+                    log.error("[{}] Document read timed out: {}", path, timeoutEx.getMessage(), timeoutEx);
+            case IllegalArgumentException illegalArgEx ->
+                    log.error("[{}] Invalid file reference: {}", path, illegalArgEx.getMessage(), illegalArgEx);
+            case IllegalStateException illegalStateEx ->
+                    log.error("[{}] Document contains no text: {}", path, illegalStateEx.getMessage(), illegalStateEx);
+            case Throwable throwable ->
+                    log.error("[{}] Document read failed: {}", path, throwable.getMessage(), throwable);
+        }
+        try {
+            log.info("[{}] Read Failed. Re-routing file to DLQ.", path, ex);
+            fileMover.moveToDLQ(path);
+            rollbackRedisMetadata(path);
+        } catch (Exception moveEx) {
+            log.error("[{}] Failed to move file to DLQ: {}", path, moveEx.getMessage(), moveEx);
+        }
         return Mono.empty();
     }
 
     private Mono<List<Document>> handleTitleDeterminationError(String path, Throwable ex) {
         log.error("[{}] LLM failed to determine game title: {}", path, ex.getMessage(), ex);
+        fileMover.moveToDLQ(path);
         rollbackRedisMetadata(path);
         return Mono.just(Collections.emptyList());
     }
@@ -156,7 +232,6 @@ public class ETLPipelineConfig {
 
     private Mono<List<Document>> determineDocumentTitleByLLM(List<Document> documents, ChatClient chatClient) {
         var path = getFilePath(documents);
-
         return Mono.fromCallable(() -> {
                     String combinedText = documents.stream()
                             .limit(2)
@@ -165,7 +240,7 @@ public class ETLPipelineConfig {
 
                     log.info("Calling LLM to determine game title {}.", path);
 
-                    var gameTitle = chatClient.prompt()
+                    GameTitle gameTitle = chatClient.prompt()
                             .user(promptUserSpec -> promptUserSpec
                                     .text(gameNamePrompt)
                                     .param("document", combinedText))
@@ -175,9 +250,8 @@ public class ETLPipelineConfig {
                                     .validateSchema());
 
                     if (gameTitle == null || !gameTitle.isValid()) {
-                        log.warn("[{}] LLM returned invalid game title.", path);
-                        rollbackRedisMetadata(path);
-                        return Collections.<Document>emptyList();
+                        log.warn("[{}] game title returned by LLM is invalid for the file - [{}].", gameTitle.title(), path);
+                        throw new IllegalStateException("LLM returned an invalid game title");
                     }
 
                     log.info("LLM determined the game title: {}, for the path: {}", gameTitle, path);
@@ -186,11 +260,9 @@ public class ETLPipelineConfig {
                     );
                     return documents;
                 })
-                .subscribeOn(Schedulers.boundedElastic())
-                .onErrorResume(ex -> handleTitleDeterminationError(path, ex)
-                );
+                .subscribeOn(Schedulers.boundedElastic());
     }
-
+    
     /**
      * Clears the redis metadata store on failures.
      */

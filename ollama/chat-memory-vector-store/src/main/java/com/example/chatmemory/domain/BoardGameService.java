@@ -6,6 +6,7 @@ import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -17,17 +18,15 @@ public class BoardGameService {
     private final ChatClient chatClient;
 
     public BoardGameService(
-            @Value("classpath:/promptTemplates/systemPrompt.st")Resource promptTemplate,
+            @Value("classpath:/promptTemplates/systemPrompt.st") Resource promptTemplate,
             ChatClient chatClient) {
         this.promptTemplate = promptTemplate;
         this.chatClient = chatClient;
     }
 
     public Answer askQuestion(Question question, String chatId) {
-        log.info("ask Question gameTitle - {}", question.normalizeTitle());
-        var gameNameMatchExpression = String.format(
-                "gameTitle == '%s'", question.normalizeTitle());
-
+        var gameNameMatchExpression = getDocumentFilterExpression(question);
+        log.info("ask Question gameNameMatchExpression - {}", gameNameMatchExpression);
 
         var answerText = chatClient.prompt()
                 .system(promptSystemSpec -> promptSystemSpec
@@ -43,5 +42,17 @@ public class BoardGameService {
                 .content();
         return new Answer(question.gameTitle(), answerText);
 
+    }
+
+    private String getDocumentFilterExpression(Question question) {
+        log.info("ask Question gameTitle - {}", question.normalizeTitle());
+        return "gameTitle == '%s' %s".formatted(question.normalizeTitle(), getPremiumContentFilterExpression());
+    }
+
+    private String getPremiumContentFilterExpression() {
+        var authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
+        boolean isNotPremium = authorities.stream()
+                .noneMatch(auth -> "ROLE_PREMIUM_USER".equals(auth.getAuthority()));
+        return isNotPremium ? " AND documentType != 'PREMIUM'" : "";
     }
 }
