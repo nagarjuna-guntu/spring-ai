@@ -36,14 +36,13 @@ file.supplier:
 spring.integration:
   metadata:
     namespace: etl-file-metadata
-    key-prefix: document-pipeline
+    key-prefix: local-file-system-metadata-
 
 etl:
   pipeline:
     timeout-seconds: 20
     max-concurrent-titles: 2
     backpressure-buffer-size: 100
-    redis-key-prefix: document-pipeline
     token-splitter:
       chunk-size: 750
       min-chunk-size-chars: 350

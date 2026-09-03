@@ -9,7 +9,6 @@ public record ETLPipelineProperties(
         Integer timeoutSeconds,
         Integer maxConcurrentTitles,
         Integer backpressureBufferSize,
-        String redisKeyPrefix,
         TokenSplitter tokenSplitter
 ) {
     public ETLPipelineProperties {
@@ -17,7 +16,6 @@ public record ETLPipelineProperties(
         timeoutSeconds = Objects.requireNonNullElse(timeoutSeconds, 20);
         maxConcurrentTitles = Objects.requireNonNullElse(maxConcurrentTitles, 2);
         backpressureBufferSize = Objects.requireNonNullElse(backpressureBufferSize, 100);
-        redisKeyPrefix = Objects.requireNonNullElse(redisKeyPrefix, "document-pipeline");
         tokenSplitter = Objects.requireNonNullElse(tokenSplitter, new TokenSplitter(600, 350, 3000));
     }
 

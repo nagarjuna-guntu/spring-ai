@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
-import org.springframework.integration.metadata.ConcurrentMetadataStore;
+import org.springframework.integration.file.filters.FileSystemPersistentAcceptOnceFileListFilter;
 import org.springframework.messaging.Message;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -32,16 +32,16 @@ public class ETLPipelineConfig {
     private final Resource gameNamePrompt;
     private final ChatClient chatClient;
     private final FileMover fileMover;
-    private final ConcurrentMetadataStore metadataStore;
     private final ETLPipelineProperties etlPipelineProperties;
+    private final FileSystemPersistentAcceptOnceFileListFilter persistentFileFilter;
 
     public ETLPipelineConfig(@Value("classpath:/promptTemplates/game-name-prompt.st") Resource gameNamePrompt, ChatClient chatClient,
-                             FileMover fileMover, ConcurrentMetadataStore metadataStore, ETLPipelineProperties etlPipelineProperties) {
+                             FileMover fileMover, ETLPipelineProperties etlPipelineProperties, FileSystemPersistentAcceptOnceFileListFilter persistentFileFilter) {
         this.gameNamePrompt = gameNamePrompt;
         this.chatClient = chatClient;
         this.fileMover = fileMover;
-        this.metadataStore = metadataStore;
         this.etlPipelineProperties = etlPipelineProperties;
+        this.persistentFileFilter = persistentFileFilter;
     }
 
     @Bean
@@ -122,8 +122,8 @@ public class ETLPipelineConfig {
 
     private void handleVectorStoreError(String filePath, Throwable ex) {
         log.error("File [{}] Failed to persist documents: {}", filePath, ex.getMessage(), ex);
+        rollbackFileAcceptance(filePath);
         fileMover.moveToDLQ(filePath);
-        rollbackRedisMetadata(filePath);
     }
 
     private Mono<Document> processDocumentRead(Message<byte[]> message) {
@@ -178,8 +178,8 @@ public class ETLPipelineConfig {
         }
         try {
             log.info("[{}] Read Failed. Re-routing file to DLQ.", path, ex);
+            rollbackFileAcceptance(path);
             fileMover.moveToDLQ(path);
-            rollbackRedisMetadata(path);
         } catch (Exception moveEx) {
             log.error("[{}] Failed to move file to DLQ: {}", path, moveEx.getMessage(), moveEx);
         }
@@ -199,8 +199,8 @@ public class ETLPipelineConfig {
         }
         try {
             log.info("[{}] Read Failed. Re-routing file to DLQ.", path, ex);
+            rollbackFileAcceptance(path);
             fileMover.moveToDLQ(path);
-            rollbackRedisMetadata(path);
         } catch (Exception moveEx) {
             log.error("[{}] Failed to move file to DLQ: {}", path, moveEx.getMessage(), moveEx);
         }
@@ -209,8 +209,8 @@ public class ETLPipelineConfig {
 
     private Mono<List<Document>> handleTitleDeterminationError(String path, Throwable ex) {
         log.error("[{}] LLM failed to determine game title: {}", path, ex.getMessage(), ex);
+        rollbackFileAcceptance(path);
         fileMover.moveToDLQ(path);
-        rollbackRedisMetadata(path);
         return Mono.just(Collections.emptyList());
     }
 
@@ -262,22 +262,26 @@ public class ETLPipelineConfig {
                 })
                 .subscribeOn(Schedulers.boundedElastic());
     }
-    
+
     /**
-     * Clears the redis metadata store on failures.
+     * Rolls back file acceptance after a processing failure so the file
+     * can be accepted again without restarting the application.
      */
-    private void rollbackRedisMetadata(String absoluteFilePath) {
-        if (absoluteFilePath == null) {
+    private void rollbackFileAcceptance(String absoluteFilePath) {
+        if (absoluteFilePath == null || absoluteFilePath.isBlank()) {
+            log.warn("Cannot roll back file acceptance for non-existent file: {}.", absoluteFilePath);
             return;
         }
-
         try {
-            // Spring Integration formats the key as: "prefix" + absolute_path
-            String redisKey = etlPipelineProperties.redisKeyPrefix() + ":" + absoluteFilePath;
-            log.info("Removing metadata key [{}] from Redis Metadata Store to allow re-processing on restart.", redisKey);
-            metadataStore.remove(redisKey); // Evicts the item from Redis
+            var file = new File(absoluteFilePath);
+            if (!file.exists()) {
+                log.warn("Cannot roll back file acceptance for non-existent file: {}.", absoluteFilePath);
+                return;
+            }
+            boolean removed = persistentFileFilter.remove(file);
+            log.info("Rolled back file acceptance. file=[{}], removed=[{}]", absoluteFilePath, removed);
         } catch (Exception ex) {
-            log.error("Failed to roll back Redis metadata key for file: {}", absoluteFilePath, ex);
+            log.error("Failed to roll back file acceptance for file: {}", absoluteFilePath, ex);
         }
     }
 }

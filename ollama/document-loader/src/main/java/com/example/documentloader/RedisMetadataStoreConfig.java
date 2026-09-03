@@ -1,7 +1,6 @@
 package com.example.documentloader;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -12,7 +11,7 @@ import org.springframework.integration.metadata.ConcurrentMetadataStore;
 import org.springframework.integration.redis.metadata.RedisMetadataStore;
 
 import java.io.File;
-import java.io.IOException;
+
 /*
   To prevent duplicate files processed twice, the file name metadata persisted in Redis Metadata store, verifies if the file has been alredy processed to prevent duplicate file processing.
   By default, Spring Integration's AcceptOnceFileListFilter tracks processed files in memory. If the application restarts, its memory wipes clean, causing files to be re-processed.The FileSystemPersistentAcceptOnceFileListFilter solves this by relying on an external persistent store to track state. It evaluates both the file's name and its last modified time.
@@ -38,28 +37,30 @@ public class RedisMetadataStoreConfig {
     }
 
     @Bean
-    ChainFileListFilter<File> fileSupplierFilter(ConcurrentMetadataStore metadataStore) {
+    FileSystemPersistentAcceptOnceFileListFilter persistentFileFilter(ConcurrentMetadataStore metadataStore) {
+        var persistentFileFilter = new FileSystemPersistentAcceptOnceFileListFilter(
+                metadataStore,
+                metadataProps.keyPrefix()
+        );
+        persistentFileFilter.setFlushOnUpdate(true); // Ensure updates are flushed to Redis immediately
+        return persistentFileFilter;
+    }
 
-        try{
-            String keyPrefix = metadataProps.keyPrefix() + ":";
-            // 1. Create the persistent Redis filter (checks name + last modified time)
-            FileSystemPersistentAcceptOnceFileListFilter redisFilter =
-                new FileSystemPersistentAcceptOnceFileListFilter(metadataStore, keyPrefix);
-            redisFilter.setFlushOnUpdate(true);
-            log.info("Configured persistent Redis filter with key prefix: {}", keyPrefix);
-
-            // 2. Create the regex redisFilter to maintain your (pdf|docx|txt) constraint
+    @Bean
+    ChainFileListFilter<File> fileSupplierFilter(FileSystemPersistentAcceptOnceFileListFilter persistentFileFilter) {
+        try {
+            // 1. Create the regex redisFilter to maintain your (pdf|docx|txt) constraint
             RegexPatternFileListFilter regexPatternFileListFilter =
                     new RegexPatternFileListFilter(fileSupplierProps.filenameRegex());
             log.info("Configured regex filter for file extensions: {}", fileSupplierProps.filenameRegex());
 
-            // 3. Chain them together so files must match your regex AND be unseen in Redis
+            // 2. Chain them together so files must match your regex AND be unseen in Redis
             ChainFileListFilter<File> chainFileListFilter = new ChainFileListFilter<>();
-            chainFileListFilter.addFilter(redisFilter);
             chainFileListFilter.addFilter(regexPatternFileListFilter);
+            chainFileListFilter.addFilter(persistentFileFilter);
             log.info("File filter chain initialized successfully");
             return chainFileListFilter;
-        }catch (Exception exception) {
+        } catch (Exception exception) {
             log.error("Failed to initialize file supplier filter. ", exception);
             throw new RuntimeException("Failed to initialize file supplier filter chain.", exception.getCause());
         }

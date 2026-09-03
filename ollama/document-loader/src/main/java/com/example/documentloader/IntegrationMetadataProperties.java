@@ -11,6 +11,6 @@ public record IntegrationMetadataProperties(
 ) {
     public IntegrationMetadataProperties {
         namespace = Objects.requireNonNullElse(namespace, "etl-file-metadata");
-        keyPrefix = Objects.requireNonNullElse(keyPrefix, "document-pipeline");
+        keyPrefix = Objects.requireNonNullElse(keyPrefix, "local-file-system-metadata-");
     }
 }
