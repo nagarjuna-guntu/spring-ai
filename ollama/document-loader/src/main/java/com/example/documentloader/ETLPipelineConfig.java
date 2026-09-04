@@ -6,6 +6,7 @@ import org.springframework.ai.document.Document;
 import org.springframework.ai.reader.tika.TikaDocumentReader;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,12 +16,16 @@ import org.springframework.integration.file.filters.FileSystemPersistentAcceptOn
 import org.springframework.messaging.Message;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -44,6 +49,15 @@ public class ETLPipelineConfig {
         this.persistentFileFilter = persistentFileFilter;
     }
 
+    @Bean("vectorStoreScheduler")
+    Scheduler vectorStoreScheduler() {
+        return Schedulers.newBoundedElastic(
+                etlPipelineProperties.vectorStoreProps().batchConcurrency(), // Maximum number of concurrent threads for vector store persistence
+                100, //queue size for tasks waiting to be executed
+                "vector-store"
+        );
+    }
+
     @Bean
     Function<Flux<Message<byte[]>>, Flux<Document>> documentReader() {
         return messageFlux -> messageFlux
@@ -58,8 +72,8 @@ public class ETLPipelineConfig {
     @Bean
     Function<Flux<Document>, Flux<List<Document>>> documentSplitter() {
         TokenTextSplitter splitter = TokenTextSplitter.builder()
-                .withChunkSize(etlPipelineProperties.tokenSplitter().chunkSize())
-                .withMinChunkSizeChars(etlPipelineProperties.tokenSplitter().minChunkSizeChars())
+                .withChunkSize(etlPipelineProperties.tokenSplitterProps().chunkSize())
+                .withMinChunkSizeChars(etlPipelineProperties.tokenSplitterProps().minChunkSizeChars())
                 .withKeepSeparator(true)
                 .build();
         return documentFlux -> documentFlux
@@ -90,33 +104,70 @@ public class ETLPipelineConfig {
                 .onBackpressureBuffer(etlPipelineProperties.backpressureBufferSize())
                 .filter(documents -> !documents.isEmpty())
                 .flatMap(documents -> determineDocumentTitleByLLM(documents, chatClient)
-                        .onErrorResume(ex -> handleTitleDeterminationError(getFilePath(documents), ex)), etlPipelineProperties.maxConcurrentTitles());
+                        .onErrorResume(ex -> {
+                            var path = getFilePath(documents);
+                            return handleTitleDeterminationError(path, ex);
+                        })
+                );
     }
 
     @Bean
-    Function<Flux<List<Document>>, Mono<Void>> documentConsumer(VectorStore vectorStore) {
+    Function<Flux<List<Document>>, Mono<Void>> documentConsumer(VectorStore vectorStore,
+                                                                @Qualifier("vectorStoreScheduler") Scheduler vectorStoreScheduler) {
+        var batchSize = etlPipelineProperties.vectorStoreProps().batchSize();
+        var batchConcurrency = etlPipelineProperties.vectorStoreProps().batchConcurrency();
+
         return listFlux -> listFlux
                 .filter(documents -> !documents.isEmpty())
-                .flatMap(documents -> persistDocuments(documents, vectorStore)
-                        .onErrorResume(_ -> {
-                            log.error("File [{}] Consumer processing dropped an item due to error.", getFilePath(documents));
-                            return Mono.empty(); // Ignore bad chunks, move forward
-                        })
+                .concatMap(documents ->
+                        persistDocuments(documents, vectorStore, batchSize, batchConcurrency, vectorStoreScheduler)
+                                .onErrorResume(ex -> {
+                                    var path = getFilePath(documents);
+                                    log.error("""
+                                              [{}] Vector store persistence FAILED. Dropping file and moving to DLQ.
+                                              Continue processing the pipeline.
+                                            """, path);
+                                    handleVectorStoreError(path, ex);
+                                    return Mono.empty(); // Ignore bad chunks, move forward
+                                })
                 ).then();
     }
 
-    private Mono<Void> persistDocuments(List<Document> documents, VectorStore vectorStore) {
+    private Mono<Void> persistDocuments(List<Document> documents, VectorStore vectorStore,
+                                        Integer batchSize, Integer batchConcurrency, Scheduler vectorStoreScheduler) {
         String filePath = getFilePath(documents);
         int count = documents.size();
 
+        return Mono.defer(() -> {
+            log.info("[{}] Vector store persistence STARTED. chunks = {}, batch size = {}, concurrency = {}",
+                    filePath, count, batchSize, batchConcurrency);
+            return Flux.fromIterable(documents)
+                    .buffer(batchSize)
+                    .index()
+                    .flatMap(indexedBatch ->
+                                    persistBatch(filePath, indexedBatch.getT1() + 1,
+                                            indexedBatch.getT2(), vectorStore, vectorStoreScheduler),
+                            batchConcurrency)
+                    .then()
+                    .doOnSuccess(_ -> {
+                        log.info("[{}] Vector store persistence COMPLETED. totalChunks = {}", filePath, count);
+                        fileMover.moveProcessedFile(filePath);
+                    });
+        });
+    }
+
+    private Mono<Void> persistBatch(String filePath, long batchNumber, List<Document> batch, VectorStore vectorStore,
+                                    Scheduler vectorStoreScheduler) {
         return Mono.fromRunnable(() -> {
-                    log.info("File [{}] with documents count {}: Vector store loading STARTED.", filePath, count);
-                    vectorStore.accept(documents);
-                    log.info("File [{}] with documents count {}: Vector store loading COMPLETED.", filePath, count);
-                    fileMover.moveProcessedFile(filePath);
+                    log.debug("[{}] Vector store batch STARTED. batch={}, chunks={}",
+                            filePath, batchNumber, batch.size());
+
+                    vectorStore.accept(batch);
+
+                    log.debug("[{}] Vector store batch COMPLETED. batch={}, chunks={}",
+                            filePath, batchNumber, batch.size());
                 })
-                .subscribeOn(Schedulers.boundedElastic())
-                .doOnError(ex -> handleVectorStoreError(filePath, ex))
+                .subscribeOn(vectorStoreScheduler)
                 .then();
     }
 
@@ -236,9 +287,16 @@ public class ETLPipelineConfig {
                     String combinedText = documents.stream()
                             .limit(2)
                             .map(Document::getText)
+                            .filter(Objects::nonNull)
                             .collect(Collectors.joining(System.lineSeparator()));
 
-                    log.info("Calling LLM to determine game title {}.", path);
+                    if (combinedText.isBlank()) {
+                        throw new IllegalStateException(
+                                "Document context is empty for title determination."
+                        );
+                    }
+
+                    log.info("Calling LLM to determine the game title {}.", path);
 
                     GameTitle gameTitle = chatClient.prompt()
                             .user(promptUserSpec -> promptUserSpec
@@ -254,13 +312,15 @@ public class ETLPipelineConfig {
                         throw new IllegalStateException("LLM returned an invalid game title");
                     }
 
-                    log.info("LLM determined the game title: {}, for the path: {}", gameTitle, path);
                     documents.forEach(document ->
                             document.getMetadata().put("gameTitle", gameTitle.normalizedTitle())
                     );
+
+                    log.info("[{}] Title determination COMPLETED. title=[{}]", path, gameTitle.normalizedTitle());
                     return documents;
                 })
-                .subscribeOn(Schedulers.boundedElastic());
+                .subscribeOn(Schedulers.boundedElastic())
+                .timeout(Duration.ofSeconds(etlPipelineProperties.titleDeterminerProps().timeoutSeconds()));
     }
 
     /**
@@ -273,12 +333,12 @@ public class ETLPipelineConfig {
             return;
         }
         try {
-            var file = new File(absoluteFilePath);
-            if (!file.exists()) {
+            var filePath = Path.of(absoluteFilePath);
+            if (!Files.exists(filePath)) {
                 log.warn("Cannot roll back file acceptance for non-existent file: {}.", absoluteFilePath);
                 return;
             }
-            boolean removed = persistentFileFilter.remove(file);
+            boolean removed = persistentFileFilter.remove(filePath.toFile());
             log.info("Rolled back file acceptance. file=[{}], removed=[{}]", absoluteFilePath, removed);
         } catch (Exception ex) {
             log.error("Failed to roll back file acceptance for file: {}", absoluteFilePath, ex);

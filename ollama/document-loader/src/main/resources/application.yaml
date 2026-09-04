@@ -41,8 +41,15 @@ spring.integration:
 etl:
   pipeline:
     timeout-seconds: 20
-    max-concurrent-titles: 2
+    max-concurrency: 2
     backpressure-buffer-size: 100
+    title-determiner:
+      timeout-seconds: 2000
+      max-concurrency: 2
+    vector-store:
+      batch-size: 25
+      batch-concurrency: 2
+      timeout-seconds: 120
     token-splitter:
       chunk-size: 750
       min-chunk-size-chars: 350
