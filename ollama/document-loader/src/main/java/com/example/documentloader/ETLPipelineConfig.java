@@ -14,6 +14,7 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.integration.file.filters.FileSystemPersistentAcceptOnceFileListFilter;
 import org.springframework.messaging.Message;
+import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
@@ -80,15 +81,15 @@ public class ETLPipelineConfig {
                 .flatMap(document -> {
                     var path = getFilePath(List.of(document));
                     return Mono.fromCallable(() -> {
-                                log.info("[{}] document splitting START - ", path);
+                                log.info("Document splitting START - File [{}]", path);
                                 var chunks = splitter.apply(List.of(document));
-                                log.info("[{}] document splitting COMPLETED with chunks size : {}", path, chunks.size());
+                                log.info("Document splitting COMPLETED - File [{}] with chunks size : [{}].", path, chunks.size());
                                 return chunks;
                             })
                             .subscribeOn(Schedulers.boundedElastic())
                             .timeout(
                                     Duration.ofSeconds(20),
-                                    Mono.error(new java.util.concurrent.TimeoutException("File splitting took too long!"))
+                                    Mono.error(new java.util.concurrent.TimeoutException("Document splitting took too long! for the file [%s]".formatted(path)))
                             )
                             .onErrorResume(ex -> {
                                 log.error("Failed to split document chunks: {}", ex.getMessage());
@@ -188,17 +189,17 @@ public class ETLPipelineConfig {
 
     private Mono<Document> readDocument(Message<byte[]> message, File file, String path) {
         return Mono.fromCallable(() -> {
-                    log.info("[{}] Reading file", path);
+                    log.info("Reading file [{}]", path);
                     var documents = new TikaDocumentReader(new ByteArrayResource(message.getPayload())
                     ).get();
                     if (documents.isEmpty()) {
-                        log.info("Extracted document contains no structured data.");
-                        throw new IllegalStateException("Extracted document contains no structured data chunks.");
+                        log.info("Extracted document contains no structured data for the file [{}].", path);
+                        throw new IllegalStateException("Extracted document contains no structured data chunks for the file [%s].".formatted(path));
                     }
                     var document = documents.getFirst();
                     if (document.getText() == null || document.getText().isBlank()) {
-                        log.info("Extracted document contains no text.");
-                        throw new IllegalStateException("Extracted document contains no text.");
+                        log.info("Extracted document contains no text for the file [{}].", path);
+                        throw new IllegalStateException("Extracted document contains no text for the file [%s].".formatted(path));
                     }
                     document.getMetadata().put("file_originalFile_path", path);
                     if (isPremiumDocument(file)) {
@@ -213,19 +214,21 @@ public class ETLPipelineConfig {
     private boolean isPremiumDocument(File file) {
         var fileName = file.toPath().getFileName().toString();
         log.info("[{}] Checking if file contains premium tag.", fileName);
-        int lastDotIndex = fileName.lastIndexOf('.');
-        var baseFileName = lastDotIndex != -1 ? fileName.substring(0, lastDotIndex) : fileName;
-        return baseFileName.endsWith("-premium");
+        //Get the base file name without extension and check for premium tags
+        var baseFileName = StringUtils.stripFilenameExtension(fileName);
+        return StringUtils.endsWithIgnoreCase(baseFileName, "-premium") ||
+                StringUtils.endsWithIgnoreCase(baseFileName, "_premium") ||
+                StringUtils.endsWithIgnoreCase(baseFileName, " premium");
     }
 
     private Mono<List<Document>> handleDocumentSplitterError(String path, Throwable ex) {
         switch (ex) {
             case java.util.concurrent.TimeoutException timeoutEx ->
-                    log.error("[{}] Document read timed out: {}", path, timeoutEx.getMessage(), timeoutEx);
+                    log.error("Document split timed out for the file [{}] : {}", path, timeoutEx.getMessage(), timeoutEx);
             case IllegalArgumentException illegalArgEx ->
-                    log.error("[{}] Invalid file reference: {}", path, illegalArgEx.getMessage(), illegalArgEx);
+                    log.error("Invalid file reference for the file [{}] : {}", path, illegalArgEx.getMessage(), illegalArgEx);
             case Throwable throwable ->
-                    log.error("[{}] Document read failed: {}", path, throwable.getMessage(), throwable);
+                    log.error("Document split failed for the file [{}] : {}", path, throwable.getMessage(), throwable);
         }
         try {
             log.info("[{}] Read Failed. Re-routing file to DLQ.", path, ex);
@@ -240,26 +243,26 @@ public class ETLPipelineConfig {
     private Mono<Document> handleDocumentReadError(String path, Throwable ex) {
         switch (ex) {
             case java.util.concurrent.TimeoutException timeoutEx ->
-                    log.error("[{}] Document read timed out: {}", path, timeoutEx.getMessage(), timeoutEx);
+                    log.error("Document read timed out for the file [{}] : {}", path, timeoutEx.getMessage(), timeoutEx);
             case IllegalArgumentException illegalArgEx ->
-                    log.error("[{}] Invalid file reference: {}", path, illegalArgEx.getMessage(), illegalArgEx);
+                    log.error("Invalid file reference for the file [{}] : {}", path, illegalArgEx.getMessage(), illegalArgEx);
             case IllegalStateException illegalStateEx ->
-                    log.error("[{}] Document contains no text: {}", path, illegalStateEx.getMessage(), illegalStateEx);
+                    log.error("Document contains no text for the file [{}] : {}", path, illegalStateEx.getMessage(), illegalStateEx);
             case Throwable throwable ->
-                    log.error("[{}] Document read failed: {}", path, throwable.getMessage(), throwable);
+                    log.error("Document read failed for the file [{}] : {}", path, throwable.getMessage(), throwable);
         }
         try {
-            log.info("[{}] Read Failed. Re-routing file to DLQ.", path, ex);
+            log.info("Document read Failed for the file [{}]. Re-routing file to DLQ.", path);
             rollbackFileAcceptance(path);
             fileMover.moveToDLQ(path);
         } catch (Exception moveEx) {
-            log.error("[{}] Failed to move file to DLQ: {}", path, moveEx.getMessage(), moveEx);
+            log.error("Failed to move file [{}] to DLQ: {}", path, moveEx.getMessage(), moveEx);
         }
         return Mono.empty();
     }
 
     private Mono<List<Document>> handleTitleDeterminationError(String path, Throwable ex) {
-        log.error("[{}] LLM failed to determine game title: {}", path, ex.getMessage(), ex);
+        log.error("LLM failed to determine game title for the file [{}] : {}", path, ex.getMessage(), ex);
         rollbackFileAcceptance(path);
         fileMover.moveToDLQ(path);
         return Mono.just(Collections.emptyList());
@@ -291,12 +294,11 @@ public class ETLPipelineConfig {
                             .collect(Collectors.joining(System.lineSeparator()));
 
                     if (combinedText.isBlank()) {
-                        throw new IllegalStateException(
-                                "Document context is empty for title determination."
-                        );
+                        log.info("Document context is empty for title determination for the file [{}].", path);
+                        throw new IllegalStateException("Document context is empty for title determination for the file [%s].".formatted(path));
                     }
 
-                    log.info("Calling LLM to determine the game title {}.", path);
+                    log.info("Calling LLM to determine the game title for the file [{}].", path);
 
                     GameTitle gameTitle = chatClient.prompt()
                             .user(promptUserSpec -> promptUserSpec
@@ -308,15 +310,15 @@ public class ETLPipelineConfig {
                                     .validateSchema());
 
                     if (gameTitle == null || !gameTitle.isValid()) {
-                        log.warn("[{}] game title returned by LLM is invalid for the file - [{}].", gameTitle.title(), path);
-                        throw new IllegalStateException("LLM returned an invalid game title");
+                        log.warn("game title returned by LLM is invalid/unknown for the file - [{}].", path);
+                        throw new IllegalStateException("LLM returned an invalid game title for the file [%s].".formatted(path));
                     }
 
                     documents.forEach(document ->
                             document.getMetadata().put("gameTitle", gameTitle.normalizedTitle())
                     );
 
-                    log.info("[{}] Title determination COMPLETED. title=[{}]", path, gameTitle.normalizedTitle());
+                    log.info("Title determination COMPLETED. File - [{}] title=[{}]", path, gameTitle.normalizedTitle());
                     return documents;
                 })
                 .subscribeOn(Schedulers.boundedElastic())

@@ -28,7 +28,7 @@ public class BoardGameService {
         var gameNameMatchExpression = getDocumentFilterExpression(question);
         log.info("ask Question gameNameMatchExpression - {}", gameNameMatchExpression);
 
-        var answerText = chatClient.prompt()
+        return chatClient.prompt()
                 .system(promptSystemSpec -> promptSystemSpec
                         .text(promptTemplate)
                         .param("gameTitle", question.gameTitle())
@@ -39,8 +39,9 @@ public class BoardGameService {
                         .param(ChatMemory.CONVERSATION_ID, chatId)
                 )
                 .call()
-                .content();
-        return new Answer(question.gameTitle(), answerText);
+                .entity(Answer.class, entityParamSpec -> entityParamSpec
+                        .useProviderStructuredOutput()
+                        .validateSchema());
 
     }
 
