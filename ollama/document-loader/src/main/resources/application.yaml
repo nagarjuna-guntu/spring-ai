@@ -31,7 +31,7 @@ file.supplier:
   directory: ${FILE_SUPPLIER_DIRECTORY:D:/board-game-buddy-rules/documents/dropoff}
   filename-regex: .*\.(pdf|docx|txt)
   delay-when-empty-seconds: 5
-  #prevent-duplicates: true <-- Remove or set false to prevent conflicting filters, uses in memory to prevent duplicate processing instead use redis to check the duplicate file processing
+  #prevent-duplicates: true <-- Remove or set false to prevent conflicting filters, uses in memory to prevent duplicate processing instead use Redis to check the duplicate file processing
 
 spring.integration:
   metadata:
@@ -59,3 +59,6 @@ document:
   paths:
     processed: ${DOCUMENTS_PROCESSED_DIR:D:/board-game-buddy-rules/documents/processed}
     dlq: ${DOCUMENTS_DLQ_DIR:D:/board-game-buddy-rules/documents/DLQ}
+
+logging.level:
+  org.springframework.ai: DEBUG

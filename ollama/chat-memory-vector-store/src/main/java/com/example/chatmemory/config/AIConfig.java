@@ -1,11 +1,12 @@
 package com.example.chatmemory.config;
 
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.ChatClientBuilderCustomizer;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.chat.client.advisor.vectorstore.VectorStoreChatMemoryAdvisor;
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
 import org.springframework.ai.rag.preretrieval.query.expansion.MultiQueryExpander;
-import org.springframework.ai.rag.preretrieval.query.expansion.QueryExpander;
 import org.springframework.ai.rag.preretrieval.query.transformation.RewriteQueryTransformer;
 import org.springframework.ai.rag.preretrieval.query.transformation.TranslationQueryTransformer;
 import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
@@ -17,16 +18,28 @@ import org.springframework.core.Ordered;
 @Configuration
 public class AIConfig {
 
+    /**
+     * 1. The primary ChatClient bean.
+     * Spring automatically applies all ChatClientBuilderCustomizer beans registered below
+     * to the 'chatClientBuilder' before it arrives here.
+     */
     @Bean
-    ChatClient chatClient(ChatClient.Builder chatClientBuilder, VectorStore vectorStore) {
+    ChatClient chatClient(ChatClient.Builder chatClientBuilder) {
+        return chatClientBuilder.build();
+    }
 
-        return chatClientBuilder
-                .defaultAdvisors(
-                        new SimpleLoggerAdvisor(),
-                        vectorStoreChatMemoryAdvisor(vectorStore),
-                        retrievalAugmentationAdvisor(chatClientBuilder, vectorStore)
-                )
-                .build();
+    /**
+     * 2. REGISTER A CUSTOMIZER
+     * Automatically registers your global core advisors (Logging, Memory, and RAG)
+     * to the autoconfigured framework builder.
+     */
+    @Bean
+    ChatClientBuilderCustomizer advisorConfiguringCustomizer(VectorStoreChatMemoryAdvisor vectorStoreChatMemoryAdvisor,
+                                                             RetrievalAugmentationAdvisor retrievalAugmentationAdvisor) {
+        return builder -> builder.defaultAdvisors(
+                new SimpleLoggerAdvisor(),
+                vectorStoreChatMemoryAdvisor,
+                retrievalAugmentationAdvisor);
     }
 
     @Bean
@@ -37,41 +50,49 @@ public class AIConfig {
     }
 
     @Bean
-    RetrievalAugmentationAdvisor retrievalAugmentationAdvisor(ChatClient.Builder chatClientBuilder, VectorStore vectorStore) {
+    RetrievalAugmentationAdvisor retrievalAugmentationAdvisor(VectorStoreDocumentRetriever vectorStoreDocumentRetriever,
+                                                              TranslationQueryTransformer translationQueryTransformer,
+                                                              RewriteQueryTransformer rewriteQueryTransformer,
+                                                              MultiQueryExpander multiQueryExpander) {
         return RetrievalAugmentationAdvisor.builder()
-                .documentRetriever(
-                        VectorStoreDocumentRetriever.builder()
-                                .vectorStore(vectorStore)
-                                .build()
-                )
-                .queryTransformers(
-                        translationQueryTransformer(chatClientBuilder),
-                        rewriteQueryTransformer(chatClientBuilder)
-                )
-                .queryExpander(multiQueryExpander(chatClientBuilder))
+                .documentRetriever(vectorStoreDocumentRetriever)
+                .queryTransformers(translationQueryTransformer, rewriteQueryTransformer)
+                .queryExpander(multiQueryExpander)
                 .build();
     }
 
     @Bean
-    QueryExpander multiQueryExpander(ChatClient.Builder chatClientBuilder) {
+    VectorStoreDocumentRetriever vectorStoreDocumentRetriever(VectorStore vectorStore) {
+        return VectorStoreDocumentRetriever.builder()
+                .vectorStore(vectorStore)
+                .build();
+    }
+
+    /*
+     * NOTE: Instead of injecting ChatClient.Builder into the subcomponents
+     * (which would cause infinite loops), we inject the root 'ChatModel' bean
+     * to create clean standalone sub-builders for internal RAG pipelines.
+     */
+    @Bean
+    MultiQueryExpander multiQueryExpander(ChatModel chatModel) {
         return MultiQueryExpander.builder()
-                .chatClientBuilder(chatClientBuilder.build().mutate())
-                .numberOfQueries(3)
+                .chatClientBuilder(ChatClient.builder(chatModel))
+                .numberOfQueries(2)
                 .includeOriginal(true)
                 .build();
     }
 
     @Bean
-    RewriteQueryTransformer rewriteQueryTransformer(ChatClient.Builder chatClientBuilder) {
+    RewriteQueryTransformer rewriteQueryTransformer(ChatModel chatModel) {
         return RewriteQueryTransformer.builder()
-                .chatClientBuilder(chatClientBuilder.build().mutate())
+                .chatClientBuilder(ChatClient.builder(chatModel))
                 .build();
     }
 
     @Bean
-    TranslationQueryTransformer translationQueryTransformer(ChatClient.Builder chatClientBuilder) {
+    TranslationQueryTransformer translationQueryTransformer(ChatModel chatModel) {
         return TranslationQueryTransformer.builder()
-                .chatClientBuilder(chatClientBuilder.build().mutate())
+                .chatClientBuilder(ChatClient.builder(chatModel))
                 .targetLanguage("English")
                 .build();
     }

@@ -1,6 +1,8 @@
 package com.example.documentloader;
 
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.ChatClientBuilderCustomizer;
+import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.chat.client.advisor.StructuredOutputValidationAdvisor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,17 +10,32 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class AIConfig {
 
+    /**
+     * 1. The primary ChatClient bean.
+     * Spring automatically applies all ChatClientBuilderCustomizer beans registered below
+     * to the 'chatClientBuilder' before it arrives here.
+     */
     @Bean
     ChatClient chatClient(ChatClient.Builder chatClientBuilder) {
+        return chatClientBuilder.build();
+    }
 
-        var validationAdvisor = StructuredOutputValidationAdvisor
+    // 2. REGISTER A CUSTOMIZER to add advisors to the ChatClient
+    @Bean
+    ChatClientBuilderCustomizer advisorConfiguringCustomizer(StructuredOutputValidationAdvisor structuredOutputValidationAdvisor) {
+        return builder -> builder.defaultAdvisors(
+                new SimpleLoggerAdvisor(),
+                structuredOutputValidationAdvisor);
+    }
+
+
+    // Output validation advisor for structured output
+    @Bean
+    StructuredOutputValidationAdvisor structuredOutputValidationAdvisor() {
+        return StructuredOutputValidationAdvisor
                 .builder()
                 .maxRepeatAttempts(2)
                 .outputType(GameTitle.class)
-                .build();
-
-        return chatClientBuilder
-                .defaultAdvisors(validationAdvisor)
                 .build();
 
     }
