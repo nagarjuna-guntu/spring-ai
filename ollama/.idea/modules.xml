@@ -6,6 +6,7 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/board-game-buddy.test.iml" filepath="$PROJECT_DIR$/.idea/modules/board-game-buddy.test.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/board-game-mcp-client.main.iml" filepath="$PROJECT_DIR$/.idea/modules/board-game-mcp-client.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/board-game-mcp-service.main.iml" filepath="$PROJECT_DIR$/.idea/modules/board-game-mcp-service.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/boardgames-rules-assistant.main.iml" filepath="$PROJECT_DIR$/.idea/modules/boardgames-rules-assistant.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/chat-memory-cassandra.main.iml" filepath="$PROJECT_DIR$/.idea/modules/chat-memory-cassandra.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/chat-memory-jdbc.main.iml" filepath="$PROJECT_DIR$/.idea/modules/chat-memory-jdbc.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/chat-memory-jdbc.test.iml" filepath="$PROJECT_DIR$/.idea/modules/chat-memory-jdbc.test.iml" />
@@ -14,6 +15,7 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/chat-memory.main.iml" filepath="$PROJECT_DIR$/.idea/modules/chat-memory.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/com.example.prompt-templates.main.iml" filepath="$PROJECT_DIR$/.idea/modules/com.example.prompt-templates.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/document-loader.main.iml" filepath="$PROJECT_DIR$/.idea/modules/document-loader.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/document-loader.test.iml" filepath="$PROJECT_DIR$/.idea/modules/document-loader.test.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/game-rules-rag.main.iml" filepath="$PROJECT_DIR$/.idea/modules/game-rules-rag.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/llm-response-meta-data.main.iml" filepath="$PROJECT_DIR$/.idea/modules/llm-response-meta-data.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/ollama.iml" filepath="$PROJECT_DIR$/.idea/ollama.iml" />
@@ -27,6 +29,7 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/tools-current-time.main.iml" filepath="$PROJECT_DIR$/.idea/modules/tools-current-time.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/tools-functions-as-tools.main.iml" filepath="$PROJECT_DIR$/.idea/modules/tools-functions-as-tools.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/tools-methods-as-tools.main.iml" filepath="$PROJECT_DIR$/.idea/modules/tools-methods-as-tools.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/tools-methods-as-tools.test.iml" filepath="$PROJECT_DIR$/.idea/modules/tools-methods-as-tools.test.iml" />
     </modules>
   </component>
 </project>

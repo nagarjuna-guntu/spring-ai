@@ -1,28 +1,21 @@
 package com.example.documentloader;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.reader.tika.TikaDocumentReader;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.Resource;
-import org.springframework.integration.file.filters.FileSystemPersistentAcceptOnceFileListFilter;
 import org.springframework.messaging.Message;
-import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
 import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
@@ -35,19 +28,19 @@ import java.util.stream.Collectors;
 public class ETLPipelineConfig {
 
 
-    private final Resource gameNamePrompt;
-    private final ChatClient chatClient;
+    private final GameTitleLLMService gameTitleLLMService;
+    private final FileUtilService fileUtilService;
     private final FileMover fileMover;
     private final ETLPipelineProperties etlPipelineProperties;
-    private final FileSystemPersistentAcceptOnceFileListFilter persistentFileFilter;
 
-    public ETLPipelineConfig(@Value("classpath:/promptTemplates/game-name-prompt.st") Resource gameNamePrompt, ChatClient chatClient,
-                             FileMover fileMover, ETLPipelineProperties etlPipelineProperties, FileSystemPersistentAcceptOnceFileListFilter persistentFileFilter) {
-        this.gameNamePrompt = gameNamePrompt;
-        this.chatClient = chatClient;
+    public ETLPipelineConfig(GameTitleLLMService gameTitleLLMService,
+                             FileUtilService fileUtilService,
+                             FileMover fileMover,
+                             ETLPipelineProperties etlPipelineProperties) {
+        this.gameTitleLLMService = gameTitleLLMService;
+        this.fileUtilService = fileUtilService;
         this.fileMover = fileMover;
         this.etlPipelineProperties = etlPipelineProperties;
-        this.persistentFileFilter = persistentFileFilter;
     }
 
     @Bean("vectorStoreScheduler")
@@ -64,7 +57,8 @@ public class ETLPipelineConfig {
         return messageFlux -> messageFlux
                 .flatMap(message -> processDocumentRead(message)
                         .onErrorResume(ex -> {
-                            var path = extractAndValidateFile(message).getAbsolutePath();
+                            File file = fileUtilService.getFile(message);
+                            var path = file.getAbsolutePath();
                             return handleDocumentReadError(path, ex);
                         })
                 );
@@ -79,7 +73,7 @@ public class ETLPipelineConfig {
                 .build();
         return documentFlux -> documentFlux
                 .flatMap(document -> {
-                    var path = getFilePath(List.of(document));
+                    var path = fileUtilService.findFilePath(List.of(document));
                     return Mono.fromCallable(() -> {
                                 log.info("Document splitting START - File [{}]", path);
                                 var chunks = splitter.apply(List.of(document));
@@ -100,13 +94,13 @@ public class ETLPipelineConfig {
     }
 
     @Bean
-    Function<Flux<List<Document>>, Flux<List<Document>>> titleDeterminer(ChatClient chatClient) {
+    Function<Flux<List<Document>>, Flux<List<Document>>> titleDeterminer() {
         return listFlux -> listFlux
                 .onBackpressureBuffer(etlPipelineProperties.backpressureBufferSize())
                 .filter(documents -> !documents.isEmpty())
-                .flatMap(documents -> determineDocumentTitleByLLM(documents, chatClient)
+                .flatMap(documents -> determineDocumentTitleByLLM(documents)
                         .onErrorResume(ex -> {
-                            var path = getFilePath(documents);
+                            var path = fileUtilService.findFilePath(documents);
                             return handleTitleDeterminationError(path, ex);
                         })
                 );
@@ -123,7 +117,7 @@ public class ETLPipelineConfig {
                 .concatMap(documents ->
                         persistDocuments(documents, vectorStore, batchSize, batchConcurrency, vectorStoreScheduler)
                                 .onErrorResume(ex -> {
-                                    var path = getFilePath(documents);
+                                    var path = fileUtilService.findFilePath(documents);
                                     log.error("""
                                               [{}] Vector store persistence FAILED. Dropping file and moving to DLQ.
                                               Continue processing the pipeline.
@@ -136,7 +130,7 @@ public class ETLPipelineConfig {
 
     private Mono<Void> persistDocuments(List<Document> documents, VectorStore vectorStore,
                                         Integer batchSize, Integer batchConcurrency, Scheduler vectorStoreScheduler) {
-        String filePath = getFilePath(documents);
+        String filePath = fileUtilService.findFilePath(documents);
         int count = documents.size();
 
         return Mono.defer(() -> {
@@ -174,13 +168,13 @@ public class ETLPipelineConfig {
 
     private void handleVectorStoreError(String filePath, Throwable ex) {
         log.error("File [{}] Failed to persist documents: {}", filePath, ex.getMessage(), ex);
-        rollbackFileAcceptance(filePath);
+        fileUtilService.rollbackFileAcceptance(filePath);
         fileMover.moveToDLQ(filePath);
     }
 
     private Mono<Document> processDocumentRead(Message<byte[]> message) {
         return Mono.defer(() -> {
-            File file = extractAndValidateFile(message);
+            File file = fileUtilService.getFile(message);
             String path = file.getAbsolutePath();
             return readDocument(message, file, path)
                     .timeout(Duration.ofSeconds(etlPipelineProperties.timeoutSeconds()));
@@ -202,7 +196,7 @@ public class ETLPipelineConfig {
                         throw new IllegalStateException("Extracted document contains no text for the file [%s].".formatted(path));
                     }
                     document.getMetadata().put("file_originalFile_path", path);
-                    if (isPremiumDocument(file)) {
+                    if (fileUtilService.isPremiumDocument(file)) {
                         log.info("[{}] Document is identified as PREMIUM.", path);
                         document.getMetadata().put("documentType", "PREMIUM");
                     }
@@ -211,81 +205,31 @@ public class ETLPipelineConfig {
                 .subscribeOn(Schedulers.boundedElastic());
     }
 
-    private boolean isPremiumDocument(File file) {
-        var fileName = file.toPath().getFileName().toString();
-        log.info("[{}] Checking if file contains premium tag.", fileName);
-        //Get the base file name without extension and check for premium tags
-        var baseFileName = StringUtils.stripFilenameExtension(fileName);
-        return StringUtils.endsWithIgnoreCase(baseFileName, "-premium") ||
-                StringUtils.endsWithIgnoreCase(baseFileName, "_premium") ||
-                StringUtils.endsWithIgnoreCase(baseFileName, " premium");
-    }
-
     private Mono<List<Document>> handleDocumentSplitterError(String path, Throwable ex) {
-        switch (ex) {
-            case java.util.concurrent.TimeoutException timeoutEx ->
-                    log.error("Document split timed out for the file [{}] : {}", path, timeoutEx.getMessage(), timeoutEx);
-            case IllegalArgumentException illegalArgEx ->
-                    log.error("Invalid file reference for the file [{}] : {}", path, illegalArgEx.getMessage(), illegalArgEx);
-            case Throwable throwable ->
-                    log.error("Document split failed for the file [{}] : {}", path, throwable.getMessage(), throwable);
-        }
-        try {
-            log.info("[{}] Read Failed. Re-routing file to DLQ.", path, ex);
-            rollbackFileAcceptance(path);
-            fileMover.moveToDLQ(path);
-        } catch (Exception moveEx) {
-            log.error("[{}] Failed to move file to DLQ: {}", path, moveEx.getMessage(), moveEx);
-        }
+        logError(path, ex);
+        log.info("[{}] Read Failed. Re-routing file to DLQ.", path, ex);
+        fileUtilService.rollbackFileAcceptance(path);
+        fileMover.moveToDLQ(path);
         return Mono.just(Collections.emptyList());
     }
 
     private Mono<Document> handleDocumentReadError(String path, Throwable ex) {
-        switch (ex) {
-            case java.util.concurrent.TimeoutException timeoutEx ->
-                    log.error("Document read timed out for the file [{}] : {}", path, timeoutEx.getMessage(), timeoutEx);
-            case IllegalArgumentException illegalArgEx ->
-                    log.error("Invalid file reference for the file [{}] : {}", path, illegalArgEx.getMessage(), illegalArgEx);
-            case IllegalStateException illegalStateEx ->
-                    log.error("Document contains no text for the file [{}] : {}", path, illegalStateEx.getMessage(), illegalStateEx);
-            case Throwable throwable ->
-                    log.error("Document read failed for the file [{}] : {}", path, throwable.getMessage(), throwable);
-        }
-        try {
-            log.info("Document read Failed for the file [{}]. Re-routing file to DLQ.", path);
-            rollbackFileAcceptance(path);
-            fileMover.moveToDLQ(path);
-        } catch (Exception moveEx) {
-            log.error("Failed to move file [{}] to DLQ: {}", path, moveEx.getMessage(), moveEx);
-        }
+        logError(path, ex);
+        log.info("Document read Failed for the file [{}]. Re-routing file to DLQ.", path);
+        fileUtilService.rollbackFileAcceptance(path);
+        fileMover.moveToDLQ(path);
         return Mono.empty();
     }
 
     private Mono<List<Document>> handleTitleDeterminationError(String path, Throwable ex) {
         log.error("LLM failed to determine game title for the file [{}] : {}", path, ex.getMessage(), ex);
-        rollbackFileAcceptance(path);
+        fileUtilService.rollbackFileAcceptance(path);
         fileMover.moveToDLQ(path);
         return Mono.just(Collections.emptyList());
     }
 
-    private File extractAndValidateFile(Message<byte[]> message) {
-        Object fileObj = message.getHeaders().get("file_originalFile");
-        if (fileObj instanceof File file && file.exists()) {
-            return file;
-        }
-        throw new IllegalArgumentException("Invalid file reference");
-    }
-
-    private String getFilePath(List<Document> documents) {
-        return documents.stream()
-                .findFirst()
-                .map(doc -> doc.getMetadata().get("file_originalFile_path"))
-                .map(Object::toString)
-                .orElse("unknown");
-    }
-
-    private Mono<List<Document>> determineDocumentTitleByLLM(List<Document> documents, ChatClient chatClient) {
-        var path = getFilePath(documents);
+    private Mono<List<Document>> determineDocumentTitleByLLM(List<Document> documents) {
+        var path = fileUtilService.findFilePath(documents);
         return Mono.fromCallable(() -> {
                     String combinedText = documents.stream()
                             .limit(2)
@@ -298,21 +242,7 @@ public class ETLPipelineConfig {
                         throw new IllegalStateException("Document context is empty for title determination for the file [%s].".formatted(path));
                     }
 
-                    log.info("Calling LLM to determine the game title for the file [{}].", path);
-
-                    GameTitle gameTitle = chatClient.prompt()
-                            .user(promptUserSpec -> promptUserSpec
-                                    .text(gameNamePrompt)
-                                    .param("document", combinedText))
-                            .call()
-                            .entity(GameTitle.class, entityParamSpec -> entityParamSpec
-                                    .useProviderStructuredOutput()
-                                    .validateSchema());
-
-                    if (gameTitle == null || !gameTitle.isValid()) {
-                        log.warn("game title returned by LLM is invalid/unknown for the file - [{}].", path);
-                        throw new IllegalStateException("LLM returned an invalid game title for the file [%s].".formatted(path));
-                    }
+                    GameTitle gameTitle = findGameTitleByLLM(path, combinedText);
 
                     documents.forEach(document ->
                             document.getMetadata().put("gameTitle", gameTitle.normalizedTitle())
@@ -325,25 +255,26 @@ public class ETLPipelineConfig {
                 .timeout(Duration.ofSeconds(etlPipelineProperties.titleDeterminerProps().timeoutSeconds()));
     }
 
-    /**
-     * Rolls back file acceptance after a processing failure so the file
-     * can be accepted again without restarting the application.
-     */
-    private void rollbackFileAcceptance(String absoluteFilePath) {
-        if (absoluteFilePath == null || absoluteFilePath.isBlank()) {
-            log.warn("Cannot roll back file acceptance for non-existent file: {}.", absoluteFilePath);
-            return;
+    private GameTitle findGameTitleByLLM(String path, String combinedText) {
+        log.info("Calling LLM to determine the game title for the file [{}].", path);
+        GameTitle gameTitle = gameTitleLLMService.findGameTitle(combinedText);
+        if (gameTitle == null || !gameTitle.isValid()) {
+            log.warn("game title returned by LLM is invalid/unknown for the file - [{}].", path);
+            throw new IllegalStateException("LLM returned an invalid game title for the file [%s].".formatted(path));
         }
-        try {
-            var filePath = Path.of(absoluteFilePath);
-            if (!Files.exists(filePath)) {
-                log.warn("Cannot roll back file acceptance for non-existent file: {}.", absoluteFilePath);
-                return;
-            }
-            boolean removed = persistentFileFilter.remove(filePath.toFile());
-            log.info("Rolled back file acceptance. file=[{}], removed=[{}]", absoluteFilePath, removed);
-        } catch (Exception ex) {
-            log.error("Failed to roll back file acceptance for file: {}", absoluteFilePath, ex);
+        return gameTitle;
+    }
+
+    private void logError(String path, Throwable ex) {
+        switch (ex) {
+            case java.util.concurrent.TimeoutException timeoutEx ->
+                    log.error("Document read timed out for the file [{}] : {}", path, timeoutEx.getMessage(), timeoutEx);
+            case IllegalArgumentException illegalArgEx ->
+                    log.error("Invalid file reference for the file [{}] : {}", path, illegalArgEx.getMessage(), illegalArgEx);
+            case IllegalStateException illegalStateEx ->
+                    log.error("Document contains no text for the file [{}] : {}", path, illegalStateEx.getMessage(), illegalStateEx);
+            case Throwable throwable ->
+                    log.error("Document read failed for the file [{}] : {}", path, throwable.getMessage(), throwable);
         }
     }
 }

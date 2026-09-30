@@ -22,21 +22,18 @@ public class AIConfig {
 
     // 2. REGISTER A CUSTOMIZER to add advisors to the ChatClient
     @Bean
-    ChatClientBuilderCustomizer advisorConfiguringCustomizer(StructuredOutputValidationAdvisor structuredOutputValidationAdvisor) {
-        return builder -> builder.defaultAdvisors(
-                new SimpleLoggerAdvisor(),
-                structuredOutputValidationAdvisor);
+    ChatClientBuilderCustomizer addLogger() {
+        return builder -> builder.defaultAdvisors(SimpleLoggerAdvisor.builder().build());
     }
-
 
     // Output validation advisor for structured output
     @Bean
-    StructuredOutputValidationAdvisor structuredOutputValidationAdvisor() {
-        return StructuredOutputValidationAdvisor
+    ChatClientBuilderCustomizer addOutputValidation() {
+        var validationAdvisor = StructuredOutputValidationAdvisor
                 .builder()
                 .maxRepeatAttempts(2)
                 .outputType(GameTitle.class)
                 .build();
-
+        return builder -> builder.defaultAdvisors(validationAdvisor);
     }
 }

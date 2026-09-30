@@ -13,9 +13,16 @@ import org.springframework.integration.redis.metadata.RedisMetadataStore;
 import java.io.File;
 
 /*
-  To prevent duplicate files processed twice, the file name metadata persisted in Redis Metadata store, verifies if the file has been alredy processed to prevent duplicate file processing.
-  By default, Spring Integration's AcceptOnceFileListFilter tracks processed files in memory. If the application restarts, its memory wipes clean, causing files to be re-processed.The FileSystemPersistentAcceptOnceFileListFilter solves this by relying on an external persistent store to track state. It evaluates both the file's name and its last modified time.
-  A ConcurrentMetadataStore (like RedisMetadataStore) is a thread-safe, atomic key-value store. Because it is hosted in Redis, multiple instances of your Spring Boot application can read and write to this shared data layer. If an identical file is picked up by multiple servers, Redis ensures only one instance successfully claims the lock to process it.
+  To prevent duplicate files processed twice, the file name metadata persisted in Redis Metadata store,
+  verifies if the file has been already processed to prevent duplicate file processing.
+  By default, Spring Integration's AcceptOnceFileListFilter tracks processed files in memory.
+  If the application restarts, its memory wipes clean, causing files to be re-processed.
+  The FileSystemPersistentAcceptOnceFileListFilter solves this by relying on an external persistent store
+  to track state. It evaluates both the file's name and its last modified time.
+  A ConcurrentMetadataStore (like RedisMetadataStore) is a thread-safe, atomic key-value store.
+  Because it is hosted in Redis, multiple instances of your Spring Boot application can read and write
+  to this shared data layer. If an identical file is picked up by multiple servers,
+  Redis ensures only one instance successfully claims the lock to process it.
 */
 @Configuration
 @Slf4j
@@ -24,7 +31,8 @@ public class RedisMetadataStoreConfig {
     private final FileSupplierProperties fileSupplierProps;
     private final IntegrationMetadataProperties metadataProps;
 
-    public RedisMetadataStoreConfig(FileSupplierProperties fileSupplierProps, IntegrationMetadataProperties metadataProps) {
+    public RedisMetadataStoreConfig(FileSupplierProperties fileSupplierProps,
+                                    IntegrationMetadataProperties metadataProps) {
         this.fileSupplierProps = fileSupplierProps;
         this.metadataProps = metadataProps;
     }

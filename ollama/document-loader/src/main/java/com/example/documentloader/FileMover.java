@@ -29,16 +29,16 @@ public class FileMover {
         try {
             Path source = Path.of(filePath);
             if (!Files.exists(source)) {
-                log.warn("File not found for move: {}", filePath);
+                log.warn("File [{}] not found to move. ", filePath);
                 return;
             }
             Path targetDir = Path.of(targetDirPath);
             Files.createDirectories(targetDir);
             Path target = targetDir.resolve(source.getFileName());
             Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
-            log.info("Moved file to {}", target);
+            log.info("File Moved to [{}] - Success. ", target);
         } catch (Exception e) {
-            log.error("File move failed: {}", filePath, e);
+            log.error("File [{}] Moved - Failed. ", filePath, e);
         }
     }
 }

@@ -5,19 +5,24 @@
       <profile name="Gradle Imported" enabled="true">
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="false">
-          <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.projectlombok/lombok/1.18.46/a5cfe99fdf320e84955ef653f2ce1bf789d11385/lombok-1.18.46.jar" />
+          <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.projectlombok/lombok/1.18.48/6858f13541bab505384f07053c5a7b539bbfd3e3/lombok-1.18.48.jar" />
+          <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-configuration-processor/4.2.0-M2/8a50a95d1735761229006440d742084e40dcb85c/spring-boot-configuration-processor-4.2.0-M2.jar" />
         </processorPath>
-        <module name="chat-memory-cassandra.test" />
+        <module name="boardgames-rules-assistant.main" />
       </profile>
       <profile name="Gradle Imported" enabled="true">
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="false">
-          <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-configuration-processor/4.1.0/c3e27f93b579220e4e18fe941321525200eb36b/spring-boot-configuration-processor-4.1.0.jar" />
-          <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.projectlombok/lombok/1.18.46/a5cfe99fdf320e84955ef653f2ce1bf789d11385/lombok-1.18.46.jar" />
+          <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.projectlombok/lombok/1.18.48/6858f13541bab505384f07053c5a7b539bbfd3e3/lombok-1.18.48.jar" />
         </processorPath>
-        <module name="chat-memory-cassandra.main" />
+        <module name="boardgames-rules-assistant.test" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="rag-rules-assistant" target="27" />
+      <module name="rag-rules-assistant.main" target="27" />
+      <module name="rag-rules-assistant.test" target="27" />
+    </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
@@ -30,6 +35,9 @@
       <module name="board-game-mcp-service" options="-parameters" />
       <module name="board-game-mcp-service.main" options="-parameters" />
       <module name="board-game-mcp-service.test" options="-parameters" />
+      <module name="boardgames-rules-assistant" options="-parameters" />
+      <module name="boardgames-rules-assistant.main" options="-parameters" />
+      <module name="boardgames-rules-assistant.test" options="-parameters" />
       <module name="chat-memory" options="-parameters" />
       <module name="chat-memory-cassandra" options="-parameters" />
       <module name="chat-memory-cassandra.main" options="-parameters" />
@@ -78,6 +86,9 @@
       <module name="rag-rag-advisor-query-transformer.test" options="-parameters" />
       <module name="rag-rag-advisor.main" options="-parameters" />
       <module name="rag-rag-advisor.test" options="-parameters" />
+      <module name="rag-rules-assistant" options="-parameters" />
+      <module name="rag-rules-assistant.main" options="-parameters" />
+      <module name="rag-rules-assistant.test" options="-parameters" />
       <module name="summarizing-content" options="-parameters" />
       <module name="summarizing-content.main" options="-parameters" />
       <module name="summarizing-content.test" options="-parameters" />
