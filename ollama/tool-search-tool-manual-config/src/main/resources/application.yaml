@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: tool-search-tool-manual-config
+
+  threads:
+    virtual:
+      enabled: true
+
+  main:
+    keep-alive: true # Prevents the JVM from shutting down when only virtual threads are running
+    banner-mode: off
+    web-application-type: none
+
+spring.ai:
+  ollama:
+    base-url: http://localhost:11434
+    chat.options.model: llama3.2
+    embedding.options.model: nomic-embed-text-v2-moe
+    init.pull-model-strategy: when_missing
+  vectorstore:
+    qdrant:
+      host: localhost
+      port: 6334
+      initialize-schema: true
+      collection-name: tool-indexes

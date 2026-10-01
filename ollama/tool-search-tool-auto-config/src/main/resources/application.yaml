@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: tool-search-tool-auto-config
+
+spring.threads:
+  virtual:
+    enabled: true
+
+spring.main:
+  banner-mode: off
+  web-application-type: none
+  keep-alive: true # Prevents the JVM from shutting down when only virtual threads are running
+
+spring.ai:
+  ollama:
+    base-url: http://localhost:11434
+    chat.options.model: llama3.2
+    embedding.options.model: nomic-embed-text-v2-moe
+    init.pull-model-strategy: when_missing
+  vectorstore:
+    qdrant:
+      host: localhost
+      port: 6334
+      initialize-schema: true
+      collection-name: tool-search-indexes
+
+  chat.client:
+    tool-search-advisor:
+      enabled: true
+      max-results: 5
+      tool-index-type: vector
+      reference-tool-name-accumulation: false # When true, accumulate tool names across all search turns; when false, keep only the most recent turn (all parallel calls within it included).

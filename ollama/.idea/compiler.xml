@@ -1,23 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="CompilerConfiguration">
-    <annotationProcessing>
-      <profile name="Gradle Imported" enabled="true">
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="false">
-          <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.projectlombok/lombok/1.18.48/6858f13541bab505384f07053c5a7b539bbfd3e3/lombok-1.18.48.jar" />
-          <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-configuration-processor/4.2.0-M2/8a50a95d1735761229006440d742084e40dcb85c/spring-boot-configuration-processor-4.2.0-M2.jar" />
-        </processorPath>
-        <module name="boardgames-rules-assistant.main" />
-      </profile>
-      <profile name="Gradle Imported" enabled="true">
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="false">
-          <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.projectlombok/lombok/1.18.48/6858f13541bab505384f07053c5a7b539bbfd3e3/lombok-1.18.48.jar" />
-        </processorPath>
-        <module name="boardgames-rules-assistant.test" />
-      </profile>
-    </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="rag-rules-assistant" target="27" />
       <module name="rag-rules-assistant.main" target="27" />
@@ -92,6 +75,15 @@
       <module name="summarizing-content" options="-parameters" />
       <module name="summarizing-content.main" options="-parameters" />
       <module name="summarizing-content.test" options="-parameters" />
+      <module name="tool-search-tool-auto-config" options="-parameters" />
+      <module name="tool-search-tool-auto-config.main" options="-parameters" />
+      <module name="tool-search-tool-auto-config.test" options="-parameters" />
+      <module name="tool-search-tool-lucene-tool-index" options="-parameters" />
+      <module name="tool-search-tool-lucene-tool-index.main" options="-parameters" />
+      <module name="tool-search-tool-lucene-tool-index.test" options="-parameters" />
+      <module name="tool-search-tool-manual-config" options="-parameters" />
+      <module name="tool-search-tool-manual-config.main" options="-parameters" />
+      <module name="tool-search-tool-manual-config.test" options="-parameters" />
       <module name="tools-current-time" options="-parameters" />
       <module name="tools-current-time.main" options="-parameters" />
       <module name="tools-current-time.test" options="-parameters" />
