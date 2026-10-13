@@ -31,7 +31,7 @@ public class AIConfig {
     ChatClientBuilderCustomizer addOutputValidation() {
         var validationAdvisor = StructuredOutputValidationAdvisor
                 .builder()
-                .maxRepeatAttempts(2)
+                .maxRepeatAttempts(1)
                 .outputType(GameTitle.class)
                 .build();
         return builder -> builder.defaultAdvisors(validationAdvisor);

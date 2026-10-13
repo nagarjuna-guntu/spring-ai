@@ -2,6 +2,7 @@ package com.example.documentloader;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.ollama.api.OllamaChatOptions;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -17,14 +18,6 @@ public class GameTitleLLMService {
 
     public GameTitle findGameTitle(String combinedText) {
 
-        return chatClient.prompt()
-                .user(promptUserSpec -> promptUserSpec
-                        .text(promptResources.get("userPrompt"))
-                        .param("document", combinedText))
-                .call()
-                .entity(GameTitle.class, entityParamSpec -> entityParamSpec
-                        .useProviderStructuredOutput()
-                        .validateSchema());
-
+        return chatClient.prompt().user(promptUserSpec -> promptUserSpec.text(promptResources.get("userPrompt")).param("document", combinedText)).options(OllamaChatOptions.builder().temperature(0.0).topP(0.1)).call().entity(GameTitle.class, entityParamSpec -> entityParamSpec.useProviderStructuredOutput().validateSchema());
     }
 }

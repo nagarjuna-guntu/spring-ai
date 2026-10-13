@@ -1,6 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile name="Gradle Imported" enabled="true">
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="false">
+          <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.projectlombok/lombok/1.18.48/6858f13541bab505384f07053c5a7b539bbfd3e3/lombok-1.18.48.jar" />
+          <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-configuration-processor/4.2.0-M2/8a50a95d1735761229006440d742084e40dcb85c/spring-boot-configuration-processor-4.2.0-M2.jar" />
+        </processorPath>
+        <module name="modular-rag.main" />
+      </profile>
+      <profile name="Gradle Imported" enabled="true">
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="false">
+          <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.projectlombok/lombok/1.18.48/6858f13541bab505384f07053c5a7b539bbfd3e3/lombok-1.18.48.jar" />
+        </processorPath>
+        <module name="modular-rag.test" />
+      </profile>
+    </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="rag-rules-assistant" target="27" />
       <module name="rag-rules-assistant.main" target="27" />
@@ -48,6 +65,9 @@
       <module name="llm-response-meta-data" options="-parameters" />
       <module name="llm-response-meta-data.main" options="-parameters" />
       <module name="llm-response-meta-data.test" options="-parameters" />
+      <module name="modular-rag" options="-parameters" />
+      <module name="modular-rag.main" options="-parameters" />
+      <module name="modular-rag.test" options="-parameters" />
       <module name="prompt-roles" options="-parameters" />
       <module name="prompt-roles.main" options="-parameters" />
       <module name="prompt-roles.test" options="-parameters" />

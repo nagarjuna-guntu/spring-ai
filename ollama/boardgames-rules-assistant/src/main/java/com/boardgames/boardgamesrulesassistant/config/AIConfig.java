@@ -4,11 +4,15 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.ChatClientBuilderCustomizer;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.chat.client.advisor.vectorstore.VectorStoreChatMemoryAdvisor;
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
+import org.springframework.ai.rag.preretrieval.query.expansion.MultiQueryExpander;
+import org.springframework.ai.rag.preretrieval.query.transformation.RewriteQueryTransformer;
 import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.task.TaskExecutor;
 
 @Configuration
 public class AIConfig {
@@ -39,9 +43,15 @@ public class AIConfig {
     }
 
     @Bean
-    public RetrievalAugmentationAdvisor retrievalAugmentationAdvisor(VectorStoreDocumentRetriever vectorStoreDocumentRetriever) {
+    public RetrievalAugmentationAdvisor retrievalAugmentationAdvisor(VectorStoreDocumentRetriever vectorStoreDocumentRetriever,
+                                                                     RewriteQueryTransformer rewriteQueryTransformer,
+                                                                     MultiQueryExpander multiQueryExpander,
+                                                                     TaskExecutor taskExecutor) {
         return RetrievalAugmentationAdvisor.builder()
+                .queryTransformers(rewriteQueryTransformer)
+                .queryExpander(multiQueryExpander)
                 .documentRetriever(vectorStoreDocumentRetriever)
+                .taskExecutor(taskExecutor)
                 .build();
     }
 
@@ -51,9 +61,25 @@ public class AIConfig {
     }
 
     @Bean
+    RewriteQueryTransformer rewriteQueryTransformer(ChatModel chatModel) {
+        return RewriteQueryTransformer.builder()
+                .chatClientBuilder(ChatClient.builder(chatModel))
+                .build();
+    }
+
+    @Bean
+    MultiQueryExpander multiQueryExpander(ChatModel chatModel) {
+        return MultiQueryExpander.builder()
+                .chatClientBuilder(ChatClient.builder(chatModel))
+                .build();
+    }
+
+    @Bean
     VectorStoreDocumentRetriever vectorStoreDocumentRetriever(VectorStore vectorStore) {
         return VectorStoreDocumentRetriever.builder()
                 .vectorStore(vectorStore)
+                .similarityThreshold(0.5)
+                .topK(4)
                 .build();
     }
 }

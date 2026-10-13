@@ -2,6 +2,13 @@ spring:
   application:
     name: boardgames-rules-assistant
 
+spring.threads:
+  virtual:
+    enabled: true
+
+spring.main:
+  keep-alive: true # Prevents the JVM from shutting down when only virtual threads are running
+
 server:
   port: 3001
 

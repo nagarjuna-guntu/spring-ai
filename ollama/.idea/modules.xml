@@ -15,7 +15,6 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/chat-memory.main.iml" filepath="$PROJECT_DIR$/.idea/modules/chat-memory.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/com.example.prompt-templates.main.iml" filepath="$PROJECT_DIR$/.idea/modules/com.example.prompt-templates.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/document-loader.main.iml" filepath="$PROJECT_DIR$/.idea/modules/document-loader.main.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/document-loader.test.iml" filepath="$PROJECT_DIR$/.idea/modules/document-loader.test.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/game-rules-rag.main.iml" filepath="$PROJECT_DIR$/.idea/modules/game-rules-rag.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/llm-response-meta-data.main.iml" filepath="$PROJECT_DIR$/.idea/modules/llm-response-meta-data.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/ollama.iml" filepath="$PROJECT_DIR$/.idea/ollama.iml" />

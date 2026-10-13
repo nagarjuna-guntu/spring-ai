@@ -232,7 +232,7 @@ public class ETLPipelineConfig {
         var path = fileUtilService.findFilePath(documents);
         return Mono.fromCallable(() -> {
                     String combinedText = documents.stream()
-                            .limit(2)
+                            .limit(3)
                             .map(Document::getText)
                             .filter(Objects::nonNull)
                             .collect(Collectors.joining(System.lineSeparator()));
