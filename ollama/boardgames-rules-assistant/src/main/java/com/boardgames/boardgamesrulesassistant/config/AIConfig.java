@@ -10,6 +10,7 @@ import org.springframework.ai.rag.preretrieval.query.expansion.MultiQueryExpande
 import org.springframework.ai.rag.preretrieval.query.transformation.RewriteQueryTransformer;
 import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.task.TaskExecutor;
@@ -56,7 +57,7 @@ public class AIConfig {
     }
 
     @Bean
-    VectorStoreChatMemoryAdvisor chatMemoryAdvisor(VectorStore vectorStore) {
+    VectorStoreChatMemoryAdvisor chatMemoryAdvisor(@Qualifier("chatMemoryVectorStore") VectorStore vectorStore) {
         return VectorStoreChatMemoryAdvisor.builder(vectorStore).build();
     }
 
@@ -71,11 +72,13 @@ public class AIConfig {
     MultiQueryExpander multiQueryExpander(ChatModel chatModel) {
         return MultiQueryExpander.builder()
                 .chatClientBuilder(ChatClient.builder(chatModel))
+                .numberOfQueries(3)
+                .includeOriginal(true)
                 .build();
     }
 
     @Bean
-    VectorStoreDocumentRetriever vectorStoreDocumentRetriever(VectorStore vectorStore) {
+    VectorStoreDocumentRetriever vectorStoreDocumentRetriever(@Qualifier("gameRulesVectorStore") VectorStore vectorStore) {
         return VectorStoreDocumentRetriever.builder()
                 .vectorStore(vectorStore)
                 .similarityThreshold(0.5)

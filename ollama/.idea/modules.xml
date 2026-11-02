@@ -17,9 +17,10 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/document-loader.main.iml" filepath="$PROJECT_DIR$/.idea/modules/document-loader.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/game-rules-rag.main.iml" filepath="$PROJECT_DIR$/.idea/modules/game-rules-rag.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/llm-response-meta-data.main.iml" filepath="$PROJECT_DIR$/.idea/modules/llm-response-meta-data.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/modular-rag.main.iml" filepath="$PROJECT_DIR$/.idea/modules/modular-rag.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/ollama.iml" filepath="$PROJECT_DIR$/.idea/ollama.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/ollama.prompt-templates.main.iml" filepath="$PROJECT_DIR$/.idea/modules/ollama.prompt-templates.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/prompt-roles.main.iml" filepath="$PROJECT_DIR$/.idea/modules/prompt-roles.main.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/prompt-stuffing.prompt-templates.main.iml" filepath="$PROJECT_DIR$/.idea/modules/prompt-stuffing.prompt-templates.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/prompt-templates.main.iml" filepath="$PROJECT_DIR$/.idea/modules/prompt-templates.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/rag-qa-advisor.main.iml" filepath="$PROJECT_DIR$/.idea/modules/rag-qa-advisor.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/rag-rag-advisor-query-transformer.main.iml" filepath="$PROJECT_DIR$/.idea/modules/rag-rag-advisor-query-transformer.main.iml" />

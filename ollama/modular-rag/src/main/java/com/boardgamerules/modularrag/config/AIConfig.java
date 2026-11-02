@@ -83,6 +83,8 @@ public class AIConfig {
     MultiQueryExpander multiQueryExpander(ChatModel chatModel) {
         return MultiQueryExpander.builder()
                 .chatClientBuilder(ChatClient.builder(chatModel))
+                .numberOfQueries(3)
+                .includeOriginal(true)
                 .build();
     }
 
