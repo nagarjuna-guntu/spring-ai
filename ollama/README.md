@@ -48,7 +48,9 @@ User question ──▶│ Query embedding + vector retrieval       │
 ```
 
 ## RAG Architecture
-![System Architecture Diagram](/boardgames-rag-architecture.png)
+
+![RAG Architecture Diagram](boardgames-rag-architecture.png)
+
 
 
 
@@ -86,7 +88,8 @@ Question (game title + question)
 
 
 ## Modular-RAG Architecture
-![System Architecture Diagram](/boardgames-modular-rag-architecture.png)
+![Modular RAG Architecture Diagram](boardgames-modular-rag-architecture.png)
+
 
 
 
