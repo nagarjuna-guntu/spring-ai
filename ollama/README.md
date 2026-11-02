@@ -47,6 +47,11 @@ User question ──▶│ Query embedding + vector retrieval       │
                  └──────────────────────────────────────────┘
 ```
 
+## RAG Architecture
+![System Architecture Diagram](/boardgames-rag-architecture.png)
+
+
+
 The **Modular RAG application** uses the same ingestion data and vector
 store, but adds a document post-retrieval stage:
 
@@ -78,6 +83,13 @@ Question (game title + question)
              ▼
             Answer
 ```
+
+
+## Modular-RAG Architecture
+![System Architecture Diagram](/boardgames-modular-rag-architecture.png)
+
+
+
 
 ------------------------------------------------------------------------
 
