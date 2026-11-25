@@ -35,6 +35,7 @@ services:
 
   # huggingface reranking text model
   board-tei-reranker:
+    profiles: ["tei"]
     image: 'ghcr.io/huggingface/text-embeddings-inference:cpu-latest'
     container_name: 'board-tei-reranker'
     ports:
