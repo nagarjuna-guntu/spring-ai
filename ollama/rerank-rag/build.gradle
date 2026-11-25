@@ -1,0 +1,76 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '4.2.0'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.rag'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(27)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    set('springAiVersion', "2.1.0")
+    set('luceneVersion', "10.6.0")
+    set('OpenTelemetryVersion', "2.34.0-alpha")
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
+    implementation 'org.springframework.boot:spring-boot-starter-opentelemetry'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+    implementation 'org.springframework.ai:spring-ai-starter-model-ollama'
+    implementation 'org.springframework.ai:spring-ai-rag'
+    implementation 'org.springframework.ai:spring-ai-starter-model-session-jdbc'
+    implementation 'org.springframework.ai:spring-ai-starter-vector-store-pgvector'
+    implementation 'org.springframework.ai:spring-ai-vector-store-advisor'
+    implementation "io.opentelemetry.instrumentation:opentelemetry-logback-appender-1.0:$OpenTelemetryVersion"
+    implementation "org.apache.lucene:lucene-core:$luceneVersion"
+    implementation "org.apache.lucene:lucene-queryparser:$luceneVersion"
+    compileOnly 'org.projectlombok:lombok'
+    runtimeOnly 'org.postgresql:postgresql'
+    annotationProcessor 'org.projectlombok:lombok'
+    testImplementation 'org.springframework.boot:spring-boot-starter-actuator-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-data-jdbc-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-opentelemetry-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-validation-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+    testCompileOnly 'org.projectlombok:lombok'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.ai:spring-ai-bom:${springAiVersion}"
+    }
+}
+
+tasks.compileJava {
+    options.compilerArgs += ['--enable-preview']
+}
+
+tasks.compileTestJava {
+    options.compilerArgs += ['--enable-preview']
+}
+
+tasks.test {
+    useJUnitPlatform()
+    jvmArgs = ['--enable-preview', '--enable-native-access=ALL-UNNAMED']
+}
+
+tasks.bootRun {
+    jvmArgs = ['--enable-preview', '--enable-native-access=ALL-UNNAMED']
+}

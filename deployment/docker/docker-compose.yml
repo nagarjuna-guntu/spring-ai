@@ -5,6 +5,7 @@ services:
     ports:
       - '6334:6334'
       - '6333:6333'
+      
   board-redis:
     image: 'redis:8.4.0'
     container_name: 'board-redis'
@@ -21,13 +22,57 @@ services:
       - "9042:9042"
 
   board-postgres:
-    image: 'postgres:15.1'
+    image: 'pgvector/pgvector:pg17'
     container_name: 'board-postgres'
     environment:
       - 'POSTGRES_PASSWORD=secret'
       - 'POSTGRES_USER=user'
+      - 'POSTGRES_DB=postgres' # Default DB needed for the script to start
     volumes:
-      - ./postgresql/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./postgresql/init.sh:/docker-entrypoint-initdb.d/init.sh   #- ./postgresql/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - '5432:5432'
+
+  # huggingface reranking text model
+  board-tei-reranker:
+    image: 'ghcr.io/huggingface/text-embeddings-inference:cpu-latest'
+    container_name: 'board-tei-reranker'
+    ports:
+      - '8082:80'
+    volumes:
+      - D:/Projects/docker-models/tei-reranker-data:/data
+    command:
+      - --model-id
+      - BAAI/bge-reranker-v2-m3
+      - --auto-truncate
+      - --max-batch-tokens
+      - "8192"
+      - --max-concurrent-requests
+      - "8"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 300s
+    restart: unless-stopped
+
+  # Adminer DB Viewer Service
+  board-adminer:
+    image: 'adminer:6'
+    container_name: 'board-adminer'
+    ports:
+      - '8081:8080'
+    environment:
+      ADMINER_DEFAULT_SERVER: 'board-postgres'
+    depends_on:
+      - 'board-postgres'
+    restart: unless-stopped    
     
+  grafana-lgtm:
+    image: 'grafana/otel-lgtm:latest'
+    container_name: 'grafana-lgtm'
+    ports:
+      - '3000:3000'
+      - '4317:4317'
+      - '4318:4318'    

@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: boardgame-rules-ingestion
+
+server:
+  port: 3001
+
+spring.ai:
+  model.chat: none # disable the chat model autoconfiguration
+  ollama:
+    base-url: http://localhost:11434
+    embedding.options.model: nomic-embed-text-v2-moe
+    init.pull-model-strategy: when_missing
+  vectorstore:
+    pgvector:
+      schema-name: public
+      table-name: board_game_vectors
+      index-type: HNSW
+      distance-type: COSINE_DISTANCE
+      dimensions: 768 # Must match the model above
+      initialize-schema: true # We are not using Flyway (V3 script)
+      max-document-batch-size: 10000 # Optional: Maximum number of documents per batch
+
+spring.datasource:
+  username: user
+  password: secret
+  url: jdbc:postgresql://localhost:5432/boardgame_ingestion
+
+spring.batch:
+  jdbc:
+    initialize-schema: always
+
+app:
+  ingestion:
+    input-directory: D:/board-game-buddy-rules/ingest/dropoff

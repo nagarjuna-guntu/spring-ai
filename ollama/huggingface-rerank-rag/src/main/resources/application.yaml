@@ -1,0 +1,90 @@
+spring:
+  application:
+    name: huggingface-rerank-rag
+
+server:
+  port: 4041
+
+spring.ai:
+  ollama:
+    base-url: http://localhost:11434
+    chat.options.model: llama3.2
+    embedding.options.model: nomic-embed-text-v2-moe
+    init.pull-model-strategy: when_missing
+  session:
+    repository.jdbc:
+      initialize-schema: always
+
+spring.datasource:
+  username: user
+  password: secret
+  url: jdbc:postgresql://localhost:5432/rag_ingestion
+
+spring.http.serviceclient:
+  tei-reranker:
+    base-url: http://localhost:8082
+    connect-timeout: 5s
+    read-timeout: 120s
+
+app:
+  vectorstore:
+    board-games:
+      schema-name: public
+      table-name: board_game_vectors
+      index-type: HNSW
+      distance-type: COSINE_DISTANCE
+      dimensions: 768
+      initialize-schema: false
+    spring-docs:
+      schema-name: public
+      table-name: spring_doc_vectors
+      index-type: HNSW
+      distance-type: COSINE_DISTANCE
+      dimensions: 768
+      initialize-schema: false
+  lucene:
+    board-games:
+      index-path: D:/board-game-buddy-rules/rag-indexes/lucene/board-games
+    spring-docs:
+      index-path: D:/board-game-buddy-rules/rag-indexes/lucene/spring-docs
+
+#OBSERVABILITY
+management.endpoints:
+  web:
+    exposure:
+      include: health,info,metrics
+
+management.endpoint:
+  health:
+    show-components: always
+    show-details: always
+
+management.tracing.sampling.probability: 1.0
+
+management.opentelemetry:
+  logging:
+    export:
+      otlp:
+        endpoint: http://localhost:4318/v1/logs
+  tracing:
+    export:
+      otlp:
+        endpoint: http://localhost:4318/v1/traces
+
+management.otlp:
+  metrics:
+    export:
+      url: http://localhost:4318/v1/metrics
+
+
+logging:
+  level:
+    org.springframework.ai: DEBUG
+    com.rag.rerank.huggingface: DEBUG
+  pattern:
+    console: "%clr(%d{HH:mm:ss.SSS}){faint} %clr(%5p) %clr([%15.15t]){faint} %clr(%-30.30logger{29}){cyan} %clr(:){faint} %m %clr(%kvp){yellow}%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"
+
+
+
+
+

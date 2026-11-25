@@ -16,15 +16,20 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/com.example.prompt-templates.main.iml" filepath="$PROJECT_DIR$/.idea/modules/com.example.prompt-templates.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/document-loader.main.iml" filepath="$PROJECT_DIR$/.idea/modules/document-loader.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/game-rules-rag.main.iml" filepath="$PROJECT_DIR$/.idea/modules/game-rules-rag.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/huggingface-rerank-rag.main.iml" filepath="$PROJECT_DIR$/.idea/modules/huggingface-rerank-rag.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/hybrid-rag.main.iml" filepath="$PROJECT_DIR$/.idea/modules/hybrid-rag.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/hyde-rag.main.iml" filepath="$PROJECT_DIR$/.idea/modules/hyde-rag.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/llm-response-meta-data.main.iml" filepath="$PROJECT_DIR$/.idea/modules/llm-response-meta-data.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/modular-rag.main.iml" filepath="$PROJECT_DIR$/.idea/modules/modular-rag.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/ollama.iml" filepath="$PROJECT_DIR$/.idea/ollama.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/ollama.prompt-templates.main.iml" filepath="$PROJECT_DIR$/.idea/modules/ollama.prompt-templates.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/prompt-roles.main.iml" filepath="$PROJECT_DIR$/.idea/modules/prompt-roles.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/prompt-templates.main.iml" filepath="$PROJECT_DIR$/.idea/modules/prompt-templates.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/rag-ingestion.main.iml" filepath="$PROJECT_DIR$/.idea/modules/rag-ingestion.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/rag-qa-advisor.main.iml" filepath="$PROJECT_DIR$/.idea/modules/rag-qa-advisor.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/rag-rag-advisor-query-transformer.main.iml" filepath="$PROJECT_DIR$/.idea/modules/rag-rag-advisor-query-transformer.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/rag-rag-advisor.main.iml" filepath="$PROJECT_DIR$/.idea/modules/rag-rag-advisor.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/rerank-rag.main.iml" filepath="$PROJECT_DIR$/.idea/modules/rerank-rag.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/summarizing-content.main.iml" filepath="$PROJECT_DIR$/.idea/modules/summarizing-content.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/tools-current-time.main.iml" filepath="$PROJECT_DIR$/.idea/modules/tools-current-time.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/tools-functions-as-tools.main.iml" filepath="$PROJECT_DIR$/.idea/modules/tools-functions-as-tools.main.iml" />

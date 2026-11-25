@@ -1,0 +1,96 @@
+spring:
+  application:
+    name: rag-ingestion
+
+server:
+  port: 4040
+
+spring.ai:
+  model.chat: none # disable the chat model autoconfiguration
+  ollama:
+    base-url: http://localhost:11434
+    embedding.options.model: nomic-embed-text-v2-moe
+    init.pull-model-strategy: when_missing
+
+spring.datasource:
+  username: user
+  password: secret
+  url: jdbc:postgresql://localhost:5432/rag_ingestion
+
+spring.batch:
+  job:
+    enabled: false
+  jdbc:
+    initialize-schema: always
+
+spring.sql:
+  init.mode: always
+
+app:
+  vectorstore:
+    board-games:
+      schema-name: public
+      table-name: board_game_vectors
+      index-type: HNSW
+      distance-type: COSINE_DISTANCE
+      dimensions: 768
+      initialize-schema: false
+    spring-docs:
+      schema-name: public
+      table-name: spring_doc_vectors
+      index-type: HNSW
+      distance-type: COSINE_DISTANCE
+      dimensions: 768
+      initialize-schema: false
+  lucene:
+    board-games:
+      index-path: D:/board-game-buddy-rules/rag-indexes/lucene/board-games
+    spring-docs:
+      index-path: D:/board-game-buddy-rules/rag-indexes/lucene/spring-docs
+  ingestion:
+    spring-docs:
+      root-directory: D:/spring-boot/documentation/spring-boot-docs/src/docs/antora/modules/reference/pages
+      framework: spring-boot
+      version: 4.2.0-RC1
+      chunk-size: 1 #10 make chuk size 1 for simpler implementation
+      skip-limit: 1000
+    board-game-docs:
+      input-directory: D:/board-game-buddy-rules/ingest/dropoff
+      chunk-size: 1 #10 make chuk size 1 for simpler implementation
+      skip-limit: 100
+
+#OBSERVABILITY
+management.endpoints:
+  web:
+    exposure:
+      include: health,info,metrics
+
+management.endpoint:
+  health:
+    show-components: always
+    show-details: always
+
+management.tracing.sampling.probability: 1.0
+
+management.opentelemetry:
+  logging:
+    export:
+      otlp:
+        endpoint: http://localhost:4318/v1/logs
+  tracing:
+    export:
+      otlp:
+        endpoint: http://localhost:4318/v1/traces
+
+management.otlp:
+  metrics:
+    export:
+      url: http://localhost:4318/v1/metrics
+
+
+logging:
+  level:
+    org.springframework.ai: DEBUG
+    com.rag.ingestion: DEBUG
+  pattern:
+    console: "%clr(%d{HH:mm:ss.SSS}){faint} %clr(%5p) %clr([%15.15t]){faint} %clr(%-30.30logger{29}){cyan} %clr(:){faint} %m %clr(%kvp){yellow}%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"

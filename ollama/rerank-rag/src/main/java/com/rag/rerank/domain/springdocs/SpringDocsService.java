@@ -1,0 +1,87 @@
+package com.rag.rerank.domain.springdocs;
+
+import com.rag.rerank.domain.RagSessionIdFactory;
+import com.rag.rerank.web.AssistantResponse;
+import com.rag.rerank.web.springdocs.SpringDocsQuestion;
+
+import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.api.Advisor;
+import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
+import org.springframework.ai.session.advisor.SessionAdvisors;
+import org.springframework.ai.vectorstore.filter.Filter;
+import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Service;
+
+@Service
+@Slf4j
+public class SpringDocsService {
+    private static final String SYSTEM_PROMPT =
+            """
+            You are a Spring Boot documentation assistant.
+
+            Answer technical questions using only the retrieved
+            Spring Boot documentation.
+
+            Instructions:
+            1. Understand the user's problem, even when described
+               using informal or non-technical language.
+            2. Identify relevant Spring Boot features and explain
+               how they address the problem.
+            3. Provide practical implementation guidance and
+               configuration examples when the retrieved context
+               supports them.
+            4. Do not invent Spring Boot APIs, properties,
+               annotations, or configuration.
+            5. If the retrieved context does not contain enough
+               information, clearly state that.
+            6. Prefer explanations appropriate for a Java
+               Spring Boot developer.
+            """;
+
+    private final ChatClient chatClient;
+    private final Advisor springDocRagAdvisor;
+    private final RagSessionIdFactory sessionIdFactory;
+
+    public SpringDocsService(
+            ChatClient chatClient,
+            @Qualifier("springDocRagAdvisor") Advisor springDocRagAdvisor,
+            RagSessionIdFactory sessionIdFactory) {
+        this.chatClient = chatClient;
+        this.springDocRagAdvisor = springDocRagAdvisor;
+        this.sessionIdFactory = sessionIdFactory;
+    }
+
+    public AssistantResponse ask(SpringDocsQuestion question, String loggedInUser) {
+        String sessionId = sessionIdFactory.forSpringDocs(loggedInUser);
+        var filterExpression = buildFilterExpression();
+
+        log.atInfo()
+                .addKeyValue("documentType", "Spring_Boot_docs")
+                .addKeyValue("question", question.question())
+                .addKeyValue("filterExpression", filterExpression)
+                .addKeyValue("session-id", sessionId)
+                .log("Asking question.");
+
+        return chatClient
+                .prompt()
+                .system(SYSTEM_PROMPT)
+                .user(question.question())
+                .advisors(springDocRagAdvisor)
+                .advisors(advisorSpec ->
+                        advisorSpec.param(
+                                VectorStoreDocumentRetriever.FILTER_EXPRESSION, filterExpression))
+                .advisors(SessionAdvisors.session(sessionId))
+                .call()
+                .entity(
+                        AssistantResponse.class,
+                        entityParamSpec ->
+                                entityParamSpec.validateSchema().useProviderStructuredOutput());
+    }
+
+    private Filter.Expression buildFilterExpression() {
+        return new FilterExpressionBuilder().eq("documentType", "SPRING_BOOT_DOC").build();
+    }
+}

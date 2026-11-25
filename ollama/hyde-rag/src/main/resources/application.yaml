@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: hyde-rag
+
+server:
+  port: 4041
+
+spring.ai:
+  ollama:
+    base-url: http://localhost:11434
+    chat.options.model: llama3.2
+    embedding.options.model: nomic-embed-text-v2-moe
+    init.pull-model-strategy: when_missing
+  session:
+    repository.jdbc:
+      initialize-schema: always
+
+spring.datasource:
+  username: user
+  password: secret
+  url: jdbc:postgresql://localhost:5432/rag_ingestion
+
+logging.level:
+  org.springframework.ai: DEBUG
